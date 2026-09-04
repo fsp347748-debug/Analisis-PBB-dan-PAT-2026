@@ -37,14 +37,12 @@ def clean_numeric_columns(df, cols):
 
 @st.cache_data(ttl=10)
 def load_all_data():
-    # Link CSV Publish to Web masing-masing tab Google Sheets kamu
     url_rekap = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=0&single=true&output=csv"
     url_air = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=589514798&single=true&output=csv"
     url_pbb = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=1312799199&single=true&output=csv"
     url_seg_air = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=1692042397&single=true&output=csv"
     url_seg_pbb = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=349029387&single=true&output=csv"
     
-    # Kamus penerjemah hari ke bahasa Indonesia
     nama_hari = {
         'Monday': 'Senin', 'Tuesday': 'Selasa', 'Wednesday': 'Rabu',
         'Thursday': 'Kamis', 'Friday': 'Jumat', 'Saturday': 'Sabtu', 'Sunday': 'Minggu'
@@ -55,17 +53,20 @@ def load_all_data():
             df = pd.read_csv(url)
             df = clean_numeric_columns(df, ['Agustus_2026', 'September_2026'])
             
-            # Otomatis buat kolom Hari berdasarkan angka Tanggal di tahun 2026
             if 'Tanggal' in df.columns:
-                tgl_dt = pd.to_datetime(df['Tanggal'].astype(str) + '-08-2026', format='%d-%m-%Y', errors='coerce')
-                df['Hari'] = tgl_dt.dt.day_name().map(nama_hari).fillna('')
-                cols = ['Tanggal', 'Hari'] + [col for col in df.columns if col not in ['Tanggal', 'Hari']]
-                df = df[cols]
+                dt_agus = pd.to_datetime(df['Tanggal'].astype(str) + '-08-2026', format='%d-%m-%Y', errors='coerce')
+                dt_sept = pd.to_datetime(df['Tanggal'].astype(str) + '-09-2026', format='%d-%m-%Y', errors='coerce')
+                
+                df['Hari_Agustus'] = dt_agus.dt.day_name().map(nama_hari).fillna('')
+                df['Hari_September'] = dt_sept.dt.day_name().map(nama_hari).fillna('')
+                
+                cols = ['Tanggal', 'Hari_Agustus', 'Agustus_2026', 'Hari_September', 'September_2026']
+                other_cols = [c for c in df.columns if c not in cols]
+                df = df[cols + other_cols]
             return df
         except:
-            return pd.DataFrame(columns=['Tanggal', 'Hari', 'Agustus_2026', 'September_2026'])
+            return pd.DataFrame(columns=['Tanggal', 'Hari_Agustus', 'Agustus_2026', 'Hari_September', 'September_2026'])
 
-    # 1. Rekap Pajak
     try:
         df_rekap = pd.read_csv(url_rekap)
         df_rekap = clean_numeric_columns(df_rekap, ['Agustus_2026', 'September_2026'])
@@ -114,8 +115,6 @@ col_w1, col_w2, col_w3 = st.columns(3)
 col_w1.metric("📅 Rata-rata/Hari Kerja Agustus", f"Rp {avg_workday_agus:,.0f}".replace(',', '.'))
 col_w2.metric("📅 Rata-rata/Hari Kerja September", f"Rp {avg_workday_sept:,.0f}".replace(',', '.'), f"{growth_workday:+.1f}% per Hari Kerja")
 col_w3.metric("💡 Indikator Perbandingan", "Apple-to-Apple (Normalisasi Workday)")
-
-st.markdown("> *Catatan Analis:* Analisis ini menormalkan perbedaan jumlah hari efektif kerja untuk membuktikan bahwa pertumbuhan penerimaan di bulan September murni didorong oleh efektivitas insentif fiskal.")
 st.write("---")
 
 # ==========================================
@@ -190,7 +189,7 @@ with tab1:
         df_air_cum = df_air.copy()
         df_air_cum['Agustus_Cum'] = df_air_cum['Agustus_2026'].cumsum()
         df_air_cum['September_Cum'] = df_air_cum['September_2026'].cumsum()
-        x_tgl = df_air_cum['Tanggal'].astype(str) + " (" + df_air_cum['Hari'] + ")"
+        x_tgl = df_air_cum['Tanggal'].astype(str) + " (Agu: " + df_air_cum['Hari_Agustus'] + " | Sept: " + df_air_cum['Hari_September'] + ")"
 
         fig_cum_air = go.Figure()
         fig_cum_air.add_trace(go.Scatter(x=x_tgl, y=df_air_cum['Agustus_Cum'], mode='lines+markers', name='Akumulasi Agustus', line=dict(color='#FFB6C1', width=3)))
@@ -229,7 +228,7 @@ with tab2:
         df_pbb_cum = df_pbb.copy()
         df_pbb_cum['Agustus_Cum'] = df_pbb_cum['Agustus_2026'].cumsum()
         df_pbb_cum['September_Cum'] = df_pbb_cum['September_2026'].cumsum()
-        x_tgl_pbb = df_pbb_cum['Tanggal'].astype(str) + " (" + df_pbb_cum['Hari'] + ")"
+        x_tgl_pbb = df_pbb_cum['Tanggal'].astype(str) + " (Agu: " + df_pbb_cum['Hari_Agustus'] + " | Sept: " + df_pbb_cum['Hari_September'] + ")"
 
         fig_cum_pbb = go.Figure()
         fig_cum_pbb.add_trace(go.Scatter(x=x_tgl_pbb, y=df_pbb_cum['Agustus_Cum'], mode='lines+markers', name='Akumulasi Agustus', line=dict(color='#FFB6C1', width=3)))
