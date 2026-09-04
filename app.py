@@ -54,18 +54,29 @@ def load_all_data():
             df = clean_numeric_columns(df, ['Agustus_2026', 'September_2026'])
             
             if 'Tanggal' in df.columns:
+                # Membuat format label berbasis Pekan & Hari (W1-Senin, W1-Selasa, dst.)
                 dt_agus = pd.to_datetime(df['Tanggal'].astype(str) + '-08-2026', format='%d-%m-%Y', errors='coerce')
                 dt_sept = pd.to_datetime(df['Tanggal'].astype(str) + '-09-2026', format='%d-%m-%Y', errors='coerce')
                 
-                df['Hari_Agustus'] = dt_agus.dt.day_name().map(nama_hari).fillna('')
-                df['Hari_September'] = dt_sept.dt.day_name().map(nama_hari).fillna('')
+                # Fungsi pembantu untuk membuat label pekan ke-n dan nama hari
+                def get_week_day_label(dt):
+                    if pd.isna(dt): return ""
+                    day_name = nama_hari.get(dt.strftime('%A'), '')
+                    # Menghitung minggu ke berapa dalam bulan tersebut (1-based)
+                    week_num = (dt.day - 1) // 7 + 1
+                    return f"W{week_num}-{day_name}"
+
+                df['Label_Agustus'] = dt_agus.apply(get_week_day_label)
+                df['Label_September'] = dt_sept.apply(get_week_day_label)
                 
-                cols = ['Tanggal', 'Hari_Agustus', 'Agustus_2026', 'Hari_September', 'September_2026']
+                # Tabel rincian tetap bersih dengan Tanggal saja tanpa hari
+                cols = ['Tanggal', 'Agustus_2026', 'September_2026', 'Label_Agustus', 'Label_September']
+                existing_cols = [c for c in cols if c in df.columns]
                 other_cols = [c for c in df.columns if c not in cols]
-                df = df[cols + other_cols]
+                df = df[existing_cols + other_cols]
             return df
         except:
-            return pd.DataFrame(columns=['Tanggal', 'Hari_Agustus', 'Agustus_2026', 'Hari_September', 'September_2026'])
+            return pd.DataFrame(columns=['Tanggal', 'Agustus_2026', 'September_2026'])
 
     try:
         df_rekap = pd.read_csv(url_rekap)
@@ -101,7 +112,7 @@ col_kpi2.metric("👑 Total September (Dengan Insentif)", f"Rp {total_sept:,.0f}
 col_kpi3.metric("⚖️ Selisih Pertumbuhan Absolut", f"Rp {selisih_total:,.0f}".replace(',', '.'))
 
 # ==========================================
-# 1.5 ANALISIS APPLE-TO-APPLE (HARI KERJA / WORKDAYS)
+# 1.5 ANALISIS APPLE-TO-APPLE (HARI KERJA)
 # ==========================================
 st.subheader("🏛️ Analisis Apple-to-Apple: Normalisasi Hari Kerja")
 hari_kerja_agus = 21 
@@ -177,27 +188,33 @@ st.plotly_chart(fig, use_container_width=True)
 st.write("---")
 
 # ==========================================
-# 3. BAGIAN BAWAH: ANALISIS HARIAN & KUMULATIF
+# 3. BAGIAN BAWAH: ANALISIS HARIAN & KUMULATIF BERBASIS PEKAN-HARI
 # ==========================================
-st.subheader("📋 Rincian Harian, Grafik Kumulatif & Segmentasi Wajib Pajak")
+st.subheader("📋 Rincian Harian, Kurva Kumulatif Pekan-Hari & Segmentasi Wajib Pajak")
 
 tab1, tab2 = st.tabs(["💧 Pajak Air Tanah", "🏡 PBB"])
 
 with tab1:
-    st.write("#### 📈 Grafik Tren Kumulatif Harian (Pajak Air Tanah)")
+    st.write("#### 📈 Kurva Kumulatif Berbasis Pekan & Hari (Pajak Air Tanah)")
     if not df_air.empty:
         df_air_cum = df_air.copy()
         df_air_cum['Agustus_Cum'] = df_air_cum['Agustus_2026'].cumsum()
         df_air_cum['September_Cum'] = df_air_cum['September_2026'].cumsum()
-        x_tgl = df_air_cum['Tanggal'].astype(str) + " (Agu: " + df_air_cum['Hari_Agustus'] + " | Sept: " + df_air_cum['Hari_September'] + ")"
+        
+        # Sumbu X menggunakan label Pekan-Hari (W1-Senin, W1-Selasa, dst.)
+        x_label_agus = df_air_cum['Label_Agustus']
+        x_label_sept = df_air_cum['Label_September']
 
         fig_cum_air = go.Figure()
-        fig_cum_air.add_trace(go.Scatter(x=x_tgl, y=df_air_cum['Agustus_Cum'], mode='lines+markers', name='Akumulasi Agustus', line=dict(color='#FFB6C1', width=3)))
-        fig_cum_air.add_trace(go.Scatter(x=x_tgl, y=df_air_cum['September_Cum'], mode='lines+markers', name='Akumulasi September', line=dict(color='#C71585', width=3)))
+        # Kurva Agustus
+        fig_cum_air.add_trace(go.Scatter(x=x_label_agus, y=df_air_cum['Agustus_Cum'], mode='lines+markers', name='Akumulasi Agustus', line=dict(color='#FFB6C1', width=3)))
+        # Kurva September
+        fig_cum_air.add_trace(go.Scatter(x=x_label_sept, y=df_air_cum['September_Cum'], mode='lines+markers', name='Akumulasi September', line=dict(color='#C71585', width=3)))
+        
         fig_cum_air.update_layout(
             paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.5)',
-            title=dict(text="Kurva Pertumbuhan Akumulasi Penerimaan Air Tanah", font=dict(size=16, color='#C71585')),
-            xaxis=dict(title='Tanggal & Hari', type='category', tickfont=dict(color='#C71585')),
+            title=dict(text="Perbandingan Kurva Kumulatif Berdasarkan Pekan & Hari (Air Tanah)", font=dict(size=16, color='#C71585')),
+            xaxis=dict(title='Pekan & Hari (W-Day)', type='category', tickfont=dict(color='#C71585')),
             yaxis=dict(title='Total Kumulatif (Rp)', tickfont=dict(color='#C71585')),
             legend=dict(bgcolor='#FFF0F5', bordercolor='#FF1493', borderwidth=1),
             hovermode="x unified"
@@ -206,7 +223,9 @@ with tab1:
 
     st.write("#### 💰 Rincian Nominal Harian Pajak Air Tanah")
     if not df_air.empty:
-        st.dataframe(df_air.style.format({
+        # Menampilkan tabel harian murni hanya Tanggal dan Nominal tanpa teks hari
+        df_air_tabel = df_air[['Tanggal', 'Agustus_2026', 'September_2026']].copy()
+        st.dataframe(df_air_tabel.style.format({
             'Agustus_2026': 'Rp {:,.0f}',
             'September_2026': 'Rp {:,.0f}'
         }), use_container_width=True)
@@ -215,7 +234,8 @@ with tab1:
 
     st.write("#### 👥 Segmentasi: Jumlah Wajib Pajak yang Membayar (Air Tanah)")
     if not df_seg_air.empty:
-        st.dataframe(df_seg_air.style.format({
+        df_seg_air_tabel = df_seg_air[['Tanggal', 'Agustus_2026', 'September_2026']].copy()
+        st.dataframe(df_seg_air_tabel.style.format({
             'Agustus_2026': '{:,.0f} WP',
             'September_2026': '{:,.0f} WP'
         }), use_container_width=True)
@@ -223,20 +243,23 @@ with tab1:
         st.info("Belum ada data segmentasi WP Air Tanah.")
 
 with tab2:
-    st.write("#### 📈 Grafik Tren Kumulatif Harian (PBB)")
+    st.write("#### 📈 Kurva Kumulatif Berbasis Pekan & Hari (PBB)")
     if not df_pbb.empty:
         df_pbb_cum = df_pbb.copy()
         df_pbb_cum['Agustus_Cum'] = df_pbb_cum['Agustus_2026'].cumsum()
         df_pbb_cum['September_Cum'] = df_pbb_cum['September_2026'].cumsum()
-        x_tgl_pbb = df_pbb_cum['Tanggal'].astype(str) + " (Agu: " + df_pbb_cum['Hari_Agustus'] + " | Sept: " + df_pbb_cum['Hari_September'] + ")"
+        
+        x_label_agus_pbb = df_pbb_cum['Label_Agustus']
+        x_label_sept_pbb = df_pbb_cum['Label_September']
 
         fig_cum_pbb = go.Figure()
-        fig_cum_pbb.add_trace(go.Scatter(x=x_tgl_pbb, y=df_pbb_cum['Agustus_Cum'], mode='lines+markers', name='Akumulasi Agustus', line=dict(color='#FFB6C1', width=3)))
-        fig_cum_pbb.add_trace(go.Scatter(x=x_tgl_pbb, y=df_pbb_cum['September_Cum'], mode='lines+markers', name='Akumulasi September', line=dict(color='#C71585', width=3)))
+        fig_cum_pbb.add_trace(go.Scatter(x=x_label_agus_pbb, y=df_pbb_cum['Agustus_Cum'], mode='lines+markers', name='Akumulasi Agustus', line=dict(color='#FFB6C1', width=3)))
+        fig_cum_pbb.add_trace(go.Scatter(x=x_label_sept_pbb, y=df_pbb_cum['September_Cum'], mode='lines+markers', name='Akumulasi September', line=dict(color='#C71585', width=3)))
+        
         fig_cum_pbb.update_layout(
             paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.5)',
-            title=dict(text="Kurva Pertumbuhan Akumulasi Penerimaan PBB", font=dict(size=16, color='#C71585')),
-            xaxis=dict(title='Tanggal & Hari', type='category', tickfont=dict(color='#C71585')),
+            title=dict(text="Perbandingan Kurva Kumulatif Berdasarkan Pekan & Hari (PBB)", font=dict(size=16, color='#C71585')),
+            xaxis=dict(title='Pekan & Hari (W-Day)', type='category', tickfont=dict(color='#C71585')),
             yaxis=dict(title='Total Kumulatif (Rp)', tickfont=dict(color='#C71585')),
             legend=dict(bgcolor='#FFF0F5', bordercolor='#FF1493', borderwidth=1),
             hovermode="x unified"
@@ -245,7 +268,8 @@ with tab2:
 
     st.write("#### 💰 Rincian Nominal Harian PBB")
     if not df_pbb.empty:
-        st.dataframe(df_pbb.style.format({
+        df_pbb_tabel = df_pbb[['Tanggal', 'Agustus_2026', 'September_2026']].copy()
+        st.dataframe(df_pbb_tabel.style.format({
             'Agustus_2026': 'Rp {:,.0f}',
             'September_2026': 'Rp {:,.0f}'
         }), use_container_width=True)
@@ -254,7 +278,8 @@ with tab2:
 
     st.write("#### 👥 Segmentasi: Jumlah NOP / Wajib Pajak yang Membayar (PBB)")
     if not df_seg_pbb.empty:
-        st.dataframe(df_seg_pbb.style.format({
+        df_seg_pbb_tabel = df_seg_pbb[['Tanggal', 'Agustus_2026', 'September_2026']].copy()
+        st.dataframe(df_seg_pbb_tabel.style.format({
             'Agustus_2026': '{:,.0f} NOP',
             'September_2026': '{:,.0f} NOP'
         }), use_container_width=True)
