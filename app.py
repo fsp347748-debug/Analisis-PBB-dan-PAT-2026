@@ -43,7 +43,7 @@ def load_all_data():
     url_seg_air = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=1692042397&single=true&output=csv"
     url_seg_pbb = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=349029387&single=true&output=csv"
     
-    nama_hari = {
+nama_hari = {
         'Monday': 'Senin', 'Tuesday': 'Selasa', 'Wednesday': 'Rabu',
         'Thursday': 'Kamis', 'Friday': 'Jumat', 'Saturday': 'Sabtu', 'Sunday': 'Minggu'
     }
@@ -54,22 +54,31 @@ def load_all_data():
             df = clean_numeric_columns(df, ['Agustus_2026', 'September_2026'])
             
             if 'Tanggal' in df.columns:
-                # Membuat format label berbasis Pekan & Hari (W1-Senin, W1-Selasa, dst.)
                 dt_agus = pd.to_datetime(df['Tanggal'].astype(str) + '-08-2026', format='%d-%m-%Y', errors='coerce')
                 dt_sept = pd.to_datetime(df['Tanggal'].astype(str) + '-09-2026', format='%d-%m-%Y', errors='coerce')
                 
-                # Fungsi pembantu untuk membuat label pekan ke-n dan nama hari
+                df['DayName_Agus'] = dt_agus.dt.day_name()
+                df['DayName_Sept'] = dt_sept.dt.day_name()
+                
+                # Saring HANYA hari kerja (Senin s.d. Jumat / Workdays saja)
+                workdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+                df = df[df['DayName_Agus'].isin(workdays) | df['DayName_Sept'].isin(workdays)].copy()
+                
                 def get_week_day_label(dt):
                     if pd.isna(dt): return ""
-                    day_name = nama_hari.get(dt.strftime('%A'), '')
-                    # Menghitung minggu ke berapa dalam bulan tersebut (1-based)
+                    eng_day = dt.strftime('%A')
+                    if eng_day not in workdays: return None # Lewati weekend
+                    day_name = nama_hari.get(eng_day, '')
                     week_num = (dt.day - 1) // 7 + 1
                     return f"W{week_num}-{day_name}"
 
                 df['Label_Agustus'] = dt_agus.apply(get_week_day_label)
                 df['Label_September'] = dt_sept.apply(get_week_day_label)
                 
-                # Tabel rincian tetap bersih dengan Tanggal saja tanpa hari
+                # Urutkan berdasarkan tanggal asli agar kronologisnya benar (Senin -> Jumat)
+                df['DateTime_Sort'] = dt_agus.fillna(dt_sept)
+                df = df.sort_values('DateTime_Sort').reset_index(drop=True)
+                
                 cols = ['Tanggal', 'Agustus_2026', 'September_2026', 'Label_Agustus', 'Label_September']
                 existing_cols = [c for c in cols if c in df.columns]
                 other_cols = [c for c in df.columns if c not in cols]
