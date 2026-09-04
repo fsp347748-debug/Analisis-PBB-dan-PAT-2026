@@ -1,9 +1,14 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
+from streamlit_autorefresh import st_autorefresh
 
 # Konfigurasi Halaman Website Tema Princess
 st.set_page_config(page_title="Dashboard Analisis Insentif Fiskal", page_icon="🎀", layout="wide")
+
+# Fitur Auto-Refresh setiap 5 detik (5000 milidetik)
+# Ini akan membersihkan cache otomatis dan mengambil data terbaru dari Google Sheets
+count = st_autorefresh(interval=5000, key="datarefreshcounter")
 
 st.markdown("""
     <style>
@@ -15,12 +20,13 @@ st.markdown("""
 
 st.title("🎀 Dashboard Analisis Dampak Insentif Fiskal 👑")
 st.markdown("✨ **Evaluasi Perbandingan Penerimaan & Kepatuhan Wajib Pajak (Agustus vs September 2026)** ✨")
+st.markdown(f"🔄 *Status Sinkronisasi Live: Auto-refresh aktif (Pembaruan ke-{count})*")
 st.write("---")
 
-# Tombol Refresh Cache
+# Tombol Refresh Manual (opsional cadangan)
 col_btn1, col_btn2 = st.columns([1, 4])
 with col_btn1:
-    if st.button("🔄 Segarkan Data"):
+    if st.button("🔄 Segarkan Sekarang"):
         st.cache_data.clear()
         st.rerun()
 
@@ -35,7 +41,8 @@ def clean_numeric_columns(df, cols):
             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
     return df
 
-@st.cache_data(ttl=10)
+# TTL diset ke 0 agar data benar-benar mengambil yang terbaru dari Google Sheets setiap 5 detik
+@st.cache_data(ttl=0)
 def load_all_data():
     url_rekap = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=0&single=true&output=csv"
     url_air = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=589514798&single=true&output=csv"
@@ -50,11 +57,7 @@ def load_all_data():
             
             if 'Tanggal' in df.columns:
                 dt_agus = pd.to_datetime(df['Tanggal'].astype(str) + '-08-2026', format='%d-%m-%Y', errors='coerce')
-                
-                # Menentukan Pekan ke- berapa (Week 1, Week 2, dst.) berdasarkan tanggal
                 df['Week_Num'] = ((dt_agus.dt.day - 1) // 7) + 1
-                
-                # Urutkan secara kronologis
                 df['DateTime_Sort'] = dt_agus
                 df = df.sort_values('DateTime_Sort').reset_index(drop=True)
             return df
@@ -180,7 +183,6 @@ tab1, tab2 = st.tabs(["💧 Pajak Air Tanah", "🏡 PBB"])
 with tab1:
     st.write("#### 📈 Kurva Kumulatif Berbasis Pekan (Weekly Cumulative - Air Tanah)")
     if not df_air.empty and 'Week_Num' in df_air.columns:
-        # Mengelompokkan data per Minggu (Week 1, Week 2, dst.)
         df_air_weekly = df_air.groupby('Week_Num')[['Agustus_2026', 'September_2026']].sum().reset_index()
         df_air_weekly['Agustus_Cum'] = df_air_weekly['Agustus_2026'].cumsum()
         df_air_weekly['September_Cum'] = df_air_weekly['September_2026'].cumsum()
