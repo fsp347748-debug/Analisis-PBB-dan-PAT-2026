@@ -43,7 +43,7 @@ def load_all_data():
     url_seg_air = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=1692042397&single=true&output=csv"
     url_seg_pbb = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=349029387&single=true&output=csv"
     
-nama_hari = {
+    nama_hari = {
         'Monday': 'Senin', 'Tuesday': 'Selasa', 'Wednesday': 'Rabu',
         'Thursday': 'Kamis', 'Friday': 'Jumat', 'Saturday': 'Sabtu', 'Sunday': 'Minggu'
     }
@@ -60,14 +60,14 @@ nama_hari = {
                 df['DayName_Agus'] = dt_agus.dt.day_name()
                 df['DayName_Sept'] = dt_sept.dt.day_name()
                 
-                # Saring HANYA hari kerja (Senin s.d. Jumat / Workdays saja)
+                # Saring HANYA hari kerja (Senin s.d. Jumat / Workdays)
                 workdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
                 df = df[df['DayName_Agus'].isin(workdays) | df['DayName_Sept'].isin(workdays)].copy()
                 
                 def get_week_day_label(dt):
                     if pd.isna(dt): return ""
                     eng_day = dt.strftime('%A')
-                    if eng_day not in workdays: return None # Lewati weekend
+                    if eng_day not in workdays: return ""
                     day_name = nama_hari.get(eng_day, '')
                     week_num = (dt.day - 1) // 7 + 1
                     return f"W{week_num}-{day_name}"
@@ -75,7 +75,7 @@ nama_hari = {
                 df['Label_Agustus'] = dt_agus.apply(get_week_day_label)
                 df['Label_September'] = dt_sept.apply(get_week_day_label)
                 
-                # Urutkan berdasarkan tanggal asli agar kronologisnya benar (Senin -> Jumat)
+                # Urutkan secara kronologis berdasarkan tanggal asli
                 df['DateTime_Sort'] = dt_agus.fillna(dt_sept)
                 df = df.sort_values('DateTime_Sort').reset_index(drop=True)
                 
@@ -197,33 +197,30 @@ st.plotly_chart(fig, use_container_width=True)
 st.write("---")
 
 # ==========================================
-# 3. BAGIAN BAWAH: ANALISIS HARIAN & KUMULATIF BERBASIS PEKAN-HARI
+# 3. BAGIAN BAWAH: ANALISIS HARIAN & KUMULATIF
 # ==========================================
-st.subheader("📋 Rincian Harian, Kurva Kumulatif Pekan-Hari & Segmentasi Wajib Pajak")
+st.subheader("📋 Rincian Harian, Kurva Kumulatif Workdays & Segmentasi Wajib Pajak")
 
 tab1, tab2 = st.tabs(["💧 Pajak Air Tanah", "🏡 PBB"])
 
 with tab1:
-    st.write("#### 📈 Kurva Kumulatif Berbasis Pekan & Hari (Pajak Air Tanah)")
+    st.write("#### 📈 Kurva Kumulatif Berbasis Hari Kerja / Workdays (Pajak Air Tanah)")
     if not df_air.empty:
         df_air_cum = df_air.copy()
         df_air_cum['Agustus_Cum'] = df_air_cum['Agustus_2026'].cumsum()
         df_air_cum['September_Cum'] = df_air_cum['September_2026'].cumsum()
         
-        # Sumbu X menggunakan label Pekan-Hari (W1-Senin, W1-Selasa, dst.)
         x_label_agus = df_air_cum['Label_Agustus']
         x_label_sept = df_air_cum['Label_September']
 
         fig_cum_air = go.Figure()
-        # Kurva Agustus
         fig_cum_air.add_trace(go.Scatter(x=x_label_agus, y=df_air_cum['Agustus_Cum'], mode='lines+markers', name='Akumulasi Agustus', line=dict(color='#FFB6C1', width=3)))
-        # Kurva September
         fig_cum_air.add_trace(go.Scatter(x=x_label_sept, y=df_air_cum['September_Cum'], mode='lines+markers', name='Akumulasi September', line=dict(color='#C71585', width=3)))
         
         fig_cum_air.update_layout(
             paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.5)',
-            title=dict(text="Perbandingan Kurva Kumulatif Berdasarkan Pekan & Hari (Air Tanah)", font=dict(size=16, color='#C71585')),
-            xaxis=dict(title='Pekan & Hari (W-Day)', type='category', tickfont=dict(color='#C71585')),
+            title=dict(text="Kurva Kumulatif Workdays (Air Tanah)", font=dict(size=16, color='#C71585')),
+            xaxis=dict(title='Pekan & Hari Kerja (W-Day)', type='category', tickfont=dict(color='#C71585')),
             yaxis=dict(title='Total Kumulatif (Rp)', tickfont=dict(color='#C71585')),
             legend=dict(bgcolor='#FFF0F5', bordercolor='#FF1493', borderwidth=1),
             hovermode="x unified"
@@ -232,7 +229,6 @@ with tab1:
 
     st.write("#### 💰 Rincian Nominal Harian Pajak Air Tanah")
     if not df_air.empty:
-        # Menampilkan tabel harian murni hanya Tanggal dan Nominal tanpa teks hari
         df_air_tabel = df_air[['Tanggal', 'Agustus_2026', 'September_2026']].copy()
         st.dataframe(df_air_tabel.style.format({
             'Agustus_2026': 'Rp {:,.0f}',
@@ -252,7 +248,7 @@ with tab1:
         st.info("Belum ada data segmentasi WP Air Tanah.")
 
 with tab2:
-    st.write("#### 📈 Kurva Kumulatif Berbasis Pekan & Hari (PBB)")
+    st.write("#### 📈 Kurva Kumulatif Berbasis Hari Kerja / Workdays (PBB)")
     if not df_pbb.empty:
         df_pbb_cum = df_pbb.copy()
         df_pbb_cum['Agustus_Cum'] = df_pbb_cum['Agustus_2026'].cumsum()
@@ -267,8 +263,8 @@ with tab2:
         
         fig_cum_pbb.update_layout(
             paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.5)',
-            title=dict(text="Perbandingan Kurva Kumulatif Berdasarkan Pekan & Hari (PBB)", font=dict(size=16, color='#C71585')),
-            xaxis=dict(title='Pekan & Hari (W-Day)', type='category', tickfont=dict(color='#C71585')),
+            title=dict(text="Kurva Kumulatif Workdays (PBB)", font=dict(size=16, color='#C71585')),
+            xaxis=dict(title='Pekan & Hari Kerja (W-Day)', type='category', tickfont=dict(color='#C71585')),
             yaxis=dict(title='Total Kumulatif (Rp)', tickfont=dict(color='#C71585')),
             legend=dict(bgcolor='#FFF0F5', bordercolor='#FF1493', borderwidth=1),
             hovermode="x unified"
