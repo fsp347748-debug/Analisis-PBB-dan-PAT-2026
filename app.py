@@ -38,11 +38,11 @@ def clean_numeric_columns(df, cols):
 @st.cache_data(ttl=10)
 def load_all_data():
     # Masukkan link CSV Publish to Web masing-masing tab Google Sheets kamu di sini
-    url_rekap = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=0&single=true&output=csv"
-    url_air = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=589514798&single=true&output=csv"
-    url_pbb = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=1312799199&single=true&output=csv"
-    url_seg_air = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=1692042397&single=true&output=csv"
-    url_seg_pbb = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=349029387&single=true&output=csv"
+    url_rekap = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=0&single=true&output=csv"
+    url_air = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=589514798&single=true&output=csv"
+    url_pbb = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=1312799199&single=true&output=csv"
+    url_seg_air = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=1692042397&single=true&output=csv"
+    url_seg_pbb = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=349029387&single=true&output=csv"
     
     # 1. Rekap Pajak
     try:
@@ -106,7 +106,7 @@ st.write("---")
 # ==========================================
 # 2. DIAGRAM BATANG REKAP & SELISIH
 # ==========================================
-st.subheader("📊 Grafik Perbandingan Penerimaan per Jenis Pajak")
+st.subheader("📊 Grafik Perbandingan Total Penerimaan per Jenis Pajak")
 
 fig = go.Figure()
 x_jenis = df_rekap['Jenis Pajak']
@@ -163,13 +163,33 @@ st.plotly_chart(fig, use_container_width=True)
 st.write("---")
 
 # ==========================================
-# 3. BAGIAN BAWAH: RINCIAN HARIAN & SEGMENTASI WP
+# 3. BAGIAN BAWAH: ANALISIS HARIAN & KUMULATIF
 # ==========================================
-st.subheader("📋 Rincian Harian & Analisis Segmentasi Wajib Pajak")
+st.subheader("📋 Rincian Harian, Grafik Kumulatif & Segmentasi Wajib Pajak")
 
 tab1, tab2 = st.tabs(["💧 Pajak Air Tanah", "🏡 PBB"])
 
 with tab1:
+    st.write("#### 📈 Grafik Tren Kumulatif Harian (Pajak Air Tanah)")
+    if not df_air.empty:
+        df_air_cum = df_air.copy()
+        df_air_cum['Agustus_Cum'] = df_air_cum['Agustus_2026'].cumsum()
+        df_air_cum['September_Cum'] = df_air_cum['September_2026'].cumsum()
+        x_tgl = df_air_cum['Tanggal'].astype(str)
+
+        fig_cum_air = go.Figure()
+        fig_cum_air.add_trace(go.Scatter(x=x_tgl, y=df_air_cum['Agustus_Cum'], mode='lines+markers', name='Akumulasi Agustus', line=dict(color='#FFB6C1', width=3)))
+        fig_cum_air.add_trace(go.Scatter(x=x_tgl, y=df_air_cum['September_Cum'], mode='lines+markers', name='Akumulasi September', line=dict(color='#C71585', width=3)))
+        fig_cum_air.update_layout(
+            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.5)',
+            title=dict(text="Kurva Pertumbuhan Akumulasi Penerimaan Air Tanah", font=dict(size=16, color='#C71585')),
+            xaxis=dict(title='Tanggal', type='category', tickfont=dict(color='#C71585')),
+            yaxis=dict(title='Total Kumulatif (Rp)', tickfont=dict(color='#C71585')),
+            legend=dict(bgcolor='#FFF0F5', bordercolor='#FF1493', borderwidth=1),
+            hovermode="x unified"
+        )
+        st.plotly_chart(fig_cum_air, use_container_width=True)
+
     st.write("#### 💰 Rincian Nominal Harian Pajak Air Tanah")
     if not df_air.empty:
         st.dataframe(df_air.style.format({
@@ -189,6 +209,26 @@ with tab1:
         st.info("Belum ada data segmentasi WP Air Tanah.")
 
 with tab2:
+    st.write("#### 📈 Grafik Tren Kumulatif Harian (PBB)")
+    if not df_pbb.empty:
+        df_pbb_cum = df_pbb.copy()
+        df_pbb_cum['Agustus_Cum'] = df_pbb_cum['Agustus_2026'].cumsum()
+        df_pbb_cum['September_Cum'] = df_pbb_cum['September_2026'].cumsum()
+        x_tgl_pbb = df_pbb_cum['Tanggal'].astype(str)
+
+        fig_cum_pbb = go.Figure()
+        fig_cum_pbb.add_trace(go.Scatter(x=x_tgl_pbb, y=df_pbb_cum['Agustus_Cum'], mode='lines+markers', name='Akumulasi Agustus', line=dict(color='#FFB6C1', width=3)))
+        fig_cum_pbb.add_trace(go.Scatter(x=x_tgl_pbb, y=df_pbb_cum['September_Cum'], mode='lines+markers', name='Akumulasi September', line=dict(color='#C71585', width=3)))
+        fig_cum_pbb.update_layout(
+            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.5)',
+            title=dict(text="Kurva Pertumbuhan Akumulasi Penerimaan PBB", font=dict(size=16, color='#C71585')),
+            xaxis=dict(title='Tanggal', type='category', tickfont=dict(color='#C71585')),
+            yaxis=dict(title='Total Kumulatif (Rp)', tickfont=dict(color='#C71585')),
+            legend=dict(bgcolor='#FFF0F5', bordercolor='#FF1493', borderwidth=1),
+            hovermode="x unified"
+        )
+        st.plotly_chart(fig_cum_pbb, use_container_width=True)
+
     st.write("#### 💰 Rincian Nominal Harian PBB")
     if not df_pbb.empty:
         st.dataframe(df_pbb.style.format({
