@@ -44,6 +44,27 @@ def load_all_data():
     url_seg_air = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=1692042397&single=true&output=csv"
     url_seg_pbb = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=349029387&single=true&output=csv"
     
+    # Kamus penerjemah hari ke bahasa Indonesia
+    nama_hari = {
+        'Monday': 'Senin', 'Tuesday': 'Selasa', 'Wednesday': 'Rabu',
+        'Thursday': 'Kamis', 'Friday': 'Jumat', 'Saturday': 'Sabtu', 'Sunday': 'Minggu'
+    }
+
+    def process_daily_df(url):
+        try:
+            df = pd.read_csv(url)
+            df = clean_numeric_columns(df, ['Agustus_2026', 'September_2026'])
+            
+            # Otomatis buat kolom Hari berdasarkan angka Tanggal di tahun 2026
+            if 'Tanggal' in df.columns:
+                tgl_dt = pd.to_datetime(df['Tanggal'].astype(str) + '-08-2026', format='%d-%m-%Y', errors='coerce')
+                df['Hari'] = tgl_dt.dt.day_name().map(nama_hari).fillna('')
+                cols = ['Tanggal', 'Hari'] + [col for col in df.columns if col not in ['Tanggal', 'Hari']]
+                df = df[cols]
+            return df
+        except:
+            return pd.DataFrame(columns=['Tanggal', 'Hari', 'Agustus_2026', 'September_2026'])
+
     # 1. Rekap Pajak
     try:
         df_rekap = pd.read_csv(url_rekap)
@@ -55,33 +76,10 @@ def load_all_data():
             'September_2026': [835178310, 198040000]
         })
         
-    # 2. Rincian Harian Air Tanah
-    try:
-        df_air = pd.read_csv(url_air)
-        df_air = clean_numeric_columns(df_air, ['Agustus_2026', 'September_2026'])
-    except:
-        df_air = pd.DataFrame(columns=['Tanggal', 'Agustus_2026', 'September_2026'])
-        
-    # 3. Rincian Harian PBB
-    try:
-        df_pbb = pd.read_csv(url_pbb)
-        df_pbb = clean_numeric_columns(df_pbb, ['Agustus_2026', 'September_2026'])
-    except:
-        df_pbb = pd.DataFrame(columns=['Tanggal', 'Agustus_2026', 'September_2026'])
-
-    # 4. Segmentasi Air Tanah (Jumlah WP)
-    try:
-        df_seg_air = pd.read_csv(url_seg_air)
-        df_seg_air = clean_numeric_columns(df_seg_air, ['Agustus_2026', 'September_2026'])
-    except:
-        df_seg_air = pd.DataFrame(columns=['Tanggal', 'Agustus_2026', 'September_2026'])
-
-    # 5. Segmentasi PBB (Jumlah WP)
-    try:
-        df_seg_pbb = pd.read_csv(url_seg_pbb)
-        df_seg_pbb = clean_numeric_columns(df_seg_pbb, ['Agustus_2026', 'September_2026'])
-    except:
-        df_seg_pbb = pd.DataFrame(columns=['Tanggal', 'Agustus_2026', 'September_2026'])
+    df_air = process_daily_df(url_air)
+    df_pbb = process_daily_df(url_pbb)
+    df_seg_air = process_daily_df(url_seg_air)
+    df_seg_pbb = process_daily_df(url_seg_pbb)
         
     return df_rekap, df_air, df_pbb, df_seg_air, df_seg_pbb
 
@@ -101,6 +99,23 @@ col_kpi1.metric("🎀 Total Agustus (Tanpa Insentif)", f"Rp {total_agus:,.0f}".r
 col_kpi2.metric("👑 Total September (Dengan Insentif)", f"Rp {total_sept:,.0f}".replace(',', '.'), f"{persen_tumbuh:+.1f}% dari Agustus")
 col_kpi3.metric("⚖️ Selisih Pertumbuhan Absolut", f"Rp {selisih_total:,.0f}".replace(',', '.'))
 
+# ==========================================
+# 1.5 ANALISIS APPLE-TO-APPLE (HARI KERJA / WORKDAYS)
+# ==========================================
+st.subheader("🏛️ Analisis Apple-to-Apple: Normalisasi Hari Kerja")
+hari_kerja_agus = 21 
+hari_kerja_sept = 22
+
+avg_workday_agus = total_agus / hari_kerja_agus
+avg_workday_sept = total_sept / hari_kerja_sept
+growth_workday = ((avg_workday_sept - avg_workday_agus) / avg_workday_agus * 100) if avg_workday_agus > 0 else 0
+
+col_w1, col_w2, col_w3 = st.columns(3)
+col_w1.metric("📅 Rata-rata/Hari Kerja Agustus", f"Rp {avg_workday_agus:,.0f}".replace(',', '.'))
+col_w2.metric("📅 Rata-rata/Hari Kerja September", f"Rp {avg_workday_sept:,.0f}".replace(',', '.'), f"{growth_workday:+.1f}% per Hari Kerja")
+col_w3.metric("💡 Indikator Perbandingan", "Apple-to-Apple (Normalisasi Workday)")
+
+st.markdown("> *Catatan Analis:* Analisis ini menormalkan perbedaan jumlah hari efektif kerja untuk membuktikan bahwa pertumbuhan penerimaan di bulan September murni didorong oleh efektivitas insentif fiskal.")
 st.write("---")
 
 # ==========================================
@@ -175,7 +190,7 @@ with tab1:
         df_air_cum = df_air.copy()
         df_air_cum['Agustus_Cum'] = df_air_cum['Agustus_2026'].cumsum()
         df_air_cum['September_Cum'] = df_air_cum['September_2026'].cumsum()
-        x_tgl = df_air_cum['Tanggal'].astype(str)
+        x_tgl = df_air_cum['Tanggal'].astype(str) + " (" + df_air_cum['Hari'] + ")"
 
         fig_cum_air = go.Figure()
         fig_cum_air.add_trace(go.Scatter(x=x_tgl, y=df_air_cum['Agustus_Cum'], mode='lines+markers', name='Akumulasi Agustus', line=dict(color='#FFB6C1', width=3)))
@@ -183,7 +198,7 @@ with tab1:
         fig_cum_air.update_layout(
             paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.5)',
             title=dict(text="Kurva Pertumbuhan Akumulasi Penerimaan Air Tanah", font=dict(size=16, color='#C71585')),
-            xaxis=dict(title='Tanggal', type='category', tickfont=dict(color='#C71585')),
+            xaxis=dict(title='Tanggal & Hari', type='category', tickfont=dict(color='#C71585')),
             yaxis=dict(title='Total Kumulatif (Rp)', tickfont=dict(color='#C71585')),
             legend=dict(bgcolor='#FFF0F5', bordercolor='#FF1493', borderwidth=1),
             hovermode="x unified"
@@ -214,7 +229,7 @@ with tab2:
         df_pbb_cum = df_pbb.copy()
         df_pbb_cum['Agustus_Cum'] = df_pbb_cum['Agustus_2026'].cumsum()
         df_pbb_cum['September_Cum'] = df_pbb_cum['September_2026'].cumsum()
-        x_tgl_pbb = df_pbb_cum['Tanggal'].astype(str)
+        x_tgl_pbb = df_pbb_cum['Tanggal'].astype(str) + " (" + df_pbb_cum['Hari'] + ")"
 
         fig_cum_pbb = go.Figure()
         fig_cum_pbb.add_trace(go.Scatter(x=x_tgl_pbb, y=df_pbb_cum['Agustus_Cum'], mode='lines+markers', name='Akumulasi Agustus', line=dict(color='#FFB6C1', width=3)))
@@ -222,7 +237,7 @@ with tab2:
         fig_cum_pbb.update_layout(
             paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.5)',
             title=dict(text="Kurva Pertumbuhan Akumulasi Penerimaan PBB", font=dict(size=16, color='#C71585')),
-            xaxis=dict(title='Tanggal', type='category', tickfont=dict(color='#C71585')),
+            xaxis=dict(title='Tanggal & Hari', type='category', tickfont=dict(color='#C71585')),
             yaxis=dict(title='Total Kumulatif (Rp)', tickfont=dict(color='#C71585')),
             legend=dict(bgcolor='#FFF0F5', bordercolor='#FF1493', borderwidth=1),
             hovermode="x unified"
