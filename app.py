@@ -9,6 +9,7 @@ st.markdown("""
     <style>
     .stApp { background-color: #FFF0F5; }
     h1, h2, h3, p, div { color: #C71585 !important; font-family: 'Georgia', serif; }
+    .stButton>button { background-color: #FFB6C1; color: #C71585; border-radius: 10px; border: 1px solid #FF1493; font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -16,25 +17,36 @@ st.title("🎀 Dashboard Realisasi RK Harian (Google Sheets) 👑")
 st.markdown("✨ **Terhubung langsung secara real-time dengan Google Sheets kantor!** ✨")
 st.write("---")
 
+# Tombol Refresh untuk membersihkan cache memori data lama
+col_btn1, col_btn2 = st.columns([1, 4])
+with col_btn1:
+    if st.button("🔄 Segarkan Data"):
+        st.cache_data.clear()
+        st.rerun()
+
 # Pilihan Jenis Pajak
 jenis_pajak = st.selectbox(
     "💖 Silakan Pilih Jenis Pajak:",
     ("Pajak Air Tanah", "PBB")
 )
 
-# Fungsi Ambil Data Murni dari Google Sheets
-@st.cache_data(ttl=30)
+# Fungsi Ambil Data Murni dari Google Sheets & Pembersih Format Angka Indonesia
+@st.cache_data(ttl=10)
 def load_google_sheet(sheet_name):
-    # Masukkan link CSV publik masing-masing sheet dari Google Sheets kantor kamu di sini:
     if sheet_name == "Pajak Air Tanah":
         url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=0&single=true&output=csv"
     else:
         url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=1312799199&single=true&output=csv"
     
-    # Membaca data langsung dari link CSV online
     df = pd.read_csv(url)
-    df['Agustus_2026'] = pd.to_numeric(df['Agustus_2026'], errors='coerce').fillna(0)
-    df['September_2026'] = pd.to_numeric(df['September_2026'], errors='coerce').fillna(0)
+    
+    # Membersihkan format titik ribuan dan koma desimal khas Indonesia (contoh: "13.403.634,00")
+    for col in ['Agustus_2026', 'September_2026']:
+        if col in df.columns:
+            if df[col].dtype == 'object':
+                df[col] = df[col].astype(str).str.replace('.', '', regex=False).str.replace(',', '.', regex=False)
+            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+            
     return df
 
 # Memuat data sesuai pilihan pajak
