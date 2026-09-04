@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 # Konfigurasi Halaman Website Tema Princess
-st.set_page_config(page_title="Dashboard Rekap Penerimaan Pajak", page_icon="🎀", layout="wide")
+st.set_page_config(page_title="Dashboard Analisis Insentif Fiskal", page_icon="🎀", layout="wide")
 
 st.markdown("""
     <style>
@@ -13,18 +13,17 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-st.title("🎀 Dashboard Rekapitulasi Penerimaan Pajak 👑")
-st.markdown("✨ **Analisis Perbandingan Realisasi Agustus vs September 2026** ✨")
+st.title("🎀 Dashboard Analisis Dampak Insentif Fiskal 👑")
+st.markdown("✨ **Evaluasi Perbandingan Penerimaan & Kepatuhan Wajib Pajak (Agustus vs September 2026)** ✨")
 st.write("---")
 
-# Tombol Refresh untuk membersihkan cache memori data lama
+# Tombol Refresh Cache
 col_btn1, col_btn2 = st.columns([1, 4])
 with col_btn1:
     if st.button("🔄 Segarkan Data"):
         st.cache_data.clear()
         st.rerun()
 
-# Fungsi Pembersih Angka Format Indonesia dari Google Sheets
 def clean_numeric_columns(df, cols):
     for col in cols:
         if col in df.columns:
@@ -36,15 +35,16 @@ def clean_numeric_columns(df, cols):
             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
     return df
 
-# URL Publish to Web dari Google Sheets Kamu
-# Pastikan spreadsheet kamu memiliki 3 tab: "Rekap Pajak", "Pajak Air Tanah", dan "PBB"
 @st.cache_data(ttl=10)
 def load_all_data():
-    # Masukkan link CSV Publish to Web masing-masing tab dari Google Sheets kamu di sini:
+    # Masukkan link CSV Publish to Web masing-masing tab Google Sheets kamu di sini
     url_rekap = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=0&single=true&output=csv"
     url_air = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=589514798&single=true&output=csv"
     url_pbb = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=1312799199&single=true&output=csv"
+    url_seg_air = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=1692042397&single=true&output=csv"
+    url_seg_pbb = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=349029387&single=true&output=csv"
     
+    # 1. Rekap Pajak
     try:
         df_rekap = pd.read_csv(url_rekap)
         df_rekap = clean_numeric_columns(df_rekap, ['Agustus_2026', 'September_2026'])
@@ -55,58 +55,89 @@ def load_all_data():
             'September_2026': [835178310, 198040000]
         })
         
+    # 2. Rincian Harian Air Tanah
     try:
         df_air = pd.read_csv(url_air)
         df_air = clean_numeric_columns(df_air, ['Agustus_2026', 'September_2026'])
     except:
         df_air = pd.DataFrame(columns=['Tanggal', 'Agustus_2026', 'September_2026'])
         
+    # 3. Rincian Harian PBB
     try:
         df_pbb = pd.read_csv(url_pbb)
         df_pbb = clean_numeric_columns(df_pbb, ['Agustus_2026', 'September_2026'])
     except:
         df_pbb = pd.DataFrame(columns=['Tanggal', 'Agustus_2026', 'September_2026'])
+
+    # 4. Segmentasi Air Tanah (Jumlah WP)
+    try:
+        df_seg_air = pd.read_csv(url_seg_air)
+        df_seg_air = clean_numeric_columns(df_seg_air, ['Agustus_2026', 'September_2026'])
+    except:
+        df_seg_air = pd.DataFrame(columns=['Tanggal', 'Agustus_2026', 'September_2026'])
+
+    # 5. Segmentasi PBB (Jumlah WP)
+    try:
+        df_seg_pbb = pd.read_csv(url_seg_pbb)
+        df_seg_pbb = clean_numeric_columns(df_seg_pbb, ['Agustus_2026', 'September_2026'])
+    except:
+        df_seg_pbb = pd.DataFrame(columns=['Tanggal', 'Agustus_2026', 'September_2026'])
         
-    return df_rekap, df_air, df_pbb
-df_rekap, df_air, df_pbb = load_all_data()
+    return df_rekap, df_air, df_pbb, df_seg_air, df_seg_pbb
+
+df_rekap, df_air, df_pbb, df_seg_air, df_seg_pbb = load_all_data()
 
 # ==========================================
-# 1. BAGIAN ATAS: DIAGRAM BATANG REKAP PAJAK
+# 1. KARTU KINERJA UTAMA (KPI)
 # ==========================================
-st.subheader("📊 Grafik Rekapitulasi per Jenis Pajak")
+total_agus = df_rekap['Agustus_2026'].sum()
+total_sept = df_rekap['September_2026'].sum()
+selisih_total = total_sept - total_agus
+persen_tumbuh = (selisih_total / total_agus * 100) if total_agus > 0 else 0
+
+st.subheader("📈 Ringkasan Eksekutif Dampak Kebijakan")
+col_kpi1, col_kpi2, col_kpi3 = st.columns(3)
+col_kpi1.metric("🎀 Total Agustus (Tanpa Insentif)", f"Rp {total_agus:,.0f}".replace(',', '.'))
+col_kpi2.metric("👑 Total September (Dengan Insentif)", f"Rp {total_sept:,.0f}".replace(',', '.'), f"{persen_tumbuh:+.1f}% dari Agustus")
+col_kpi3.metric("⚖️ Selisih Pertumbuhan Absolut", f"Rp {selisih_total:,.0f}".replace(',', '.'))
+
+st.write("---")
+
+# ==========================================
+# 2. DIAGRAM BATANG REKAP & SELISIH
+# ==========================================
+st.subheader("📊 Grafik Perbandingan Penerimaan per Jenis Pajak")
 
 fig = go.Figure()
 x_jenis = df_rekap['Jenis Pajak']
 
-# Bar Agustus
 fig.add_trace(go.Bar(
-    x=x_jenis, y=df_rekap['Agustus_2026'], name='Agustus 2026',
+    x=x_jenis, y=df_rekap['Agustus_2026'], name='Agustus 2026 (Tanpa Insentif)',
     marker_color='#FFB6C1', marker_line_color='#FF1493', marker_line_width=1.5,
     hovertemplate="<b>Agustus:</b> Rp %{y:,.0f}<extra></extra>"
 ))
 
-# Bar September
 fig.add_trace(go.Bar(
-    x=x_jenis, y=df_rekap['September_2026'], name='September 2026',
+    x=x_jenis, y=df_rekap['September_2026'], name='September 2026 (Berjalan Insentif)',
     marker_color='#FF69B4', marker_line_color='#C71585', marker_line_width=1.5,
     hovertemplate="<b>September:</b> Rp %{y:,.0f}<extra></extra>"
 ))
 
-# Logika Hitung Selisih Naik/Turun & Emoji di atas Bar
 selisih_text = []
 for index, row in df_rekap.iterrows():
     agus = row['Agustus_2026']
     sept = row['September_2026']
     selisih = sept - agus
+    p_tumbuh = (selisih / agus * 100) if agus > 0 else 0
     
     if sept > 0:
         format_selisih = f"Rp {abs(selisih):,.0f}".replace(',', '.')
         if selisih > 0:
-            selisih_text.append(f"🥳💖 Naik\n+{format_selisih}")
+            selisih_text.append(f"🥳💖 Naik ({p_tumbuh:+.1f}%)\n+{format_selisih}")
         elif selisih < 0:
-            selisih_text.append(f"😭☔ Turun\n-{format_selisih}")
+            selisih_text.append(f"😭☔ Turun ({p_tumbuh:+.1f}%)\n-{format_selisih}")
         else:
-            selisih_text.append("😶 Tetap")
+            selisih_text.append("😶 Tetap (0%)")
     else:
         selisih_text.append("")
 
@@ -119,7 +150,7 @@ fig.add_trace(go.Scatter(
 
 fig.update_layout(
     barmode='group', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.5)',
-    title=dict(text="Total Penerimaan: Agustus vs September 2026", font=dict(size=18, color='#C71585')),
+    title=dict(text="Dampak Kebijakan Insentif Fiskal terhadap Pendapatan Daerah", font=dict(size=18, color='#C71585')),
     xaxis=dict(title='Jenis Pajak', tickfont=dict(color='#C71585'), type='category'),
     yaxis=dict(title='Jumlah Total (Rp)', tickfont=dict(color='#C71585')),
     legend=dict(bgcolor='#FFF0F5', bordercolor='#FF1493', borderwidth=1),
@@ -129,25 +160,17 @@ fig.update_layout(
 
 st.plotly_chart(fig, use_container_width=True)
 
-# Kotak Metrik Total Keseluruhan
-total_all_agus = df_rekap['Agustus_2026'].sum()
-total_all_sept = df_rekap['September_2026'].sum()
-
-m1, m2 = st.columns(2)
-m1.metric("🎀 Total Keseluruhan Agustus", f"Rp {total_all_agus:,.0f}".replace(',', '.'))
-m2.metric("👑 Total Keseluruhan September", f"Rp {total_all_sept:,.0f}".replace(',', '.'))
-
 st.write("---")
 
 # ==========================================
-# 2. BAGIAN BAWAH: RINCIAN HARIAN PER TAB
+# 3. BAGIAN BAWAH: RINCIAN HARIAN & SEGMENTASI WP
 # ==========================================
-st.subheader("📋 Rincian Harian per Tanggal")
+st.subheader("📋 Rincian Harian & Analisis Segmentasi Wajib Pajak")
 
 tab1, tab2 = st.tabs(["💧 Pajak Air Tanah", "🏡 PBB"])
 
 with tab1:
-    st.write("#### Rincian Harian Pajak Air Tanah")
+    st.write("#### 💰 Rincian Nominal Harian Pajak Air Tanah")
     if not df_air.empty:
         st.dataframe(df_air.style.format({
             'Agustus_2026': 'Rp {:,.0f}',
@@ -156,8 +179,17 @@ with tab1:
     else:
         st.info("Belum ada data harian untuk Pajak Air Tanah.")
 
+    st.write("#### 👥 Segmentasi: Jumlah Wajib Pajak yang Membayar (Air Tanah)")
+    if not df_seg_air.empty:
+        st.dataframe(df_seg_air.style.format({
+            'Agustus_2026': '{:,.0f} WP',
+            'September_2026': '{:,.0f} WP'
+        }), use_container_width=True)
+    else:
+        st.info("Belum ada data segmentasi WP Air Tanah.")
+
 with tab2:
-    st.write("#### Rincian Harian PBB")
+    st.write("#### 💰 Rincian Nominal Harian PBB")
     if not df_pbb.empty:
         st.dataframe(df_pbb.style.format({
             'Agustus_2026': 'Rp {:,.0f}',
@@ -165,3 +197,12 @@ with tab2:
         }), use_container_width=True)
     else:
         st.info("Belum ada data harian untuk PBB.")
+
+    st.write("#### 👥 Segmentasi: Jumlah NOP / Wajib Pajak yang Membayar (PBB)")
+    if not df_seg_pbb.empty:
+        st.dataframe(df_seg_pbb.style.format({
+            'Agustus_2026': '{:,.0f} NOP',
+            'September_2026': '{:,.0f} NOP'
+        }), use_container_width=True)
+    else:
+        st.info("Belum ada data segmentasi NOP PBB.")
