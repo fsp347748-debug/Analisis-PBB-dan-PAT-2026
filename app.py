@@ -17,7 +17,7 @@ st.title("🎀 Dashboard Analisis Dampak Insentif Fiskal 👑")
 st.markdown("✨ **Evaluasi Perbandingan Penerimaan & Kepatuhan Wajib Pajak (Agustus vs September 2026)** ✨")
 st.write("---")
 
-# Tombol Refresh Manual yang Aman & Konsisten
+# Tombol Refresh Manual
 col_btn1, col_btn2 = st.columns([1, 4])
 with col_btn1:
     if st.button("🔄 Segarkan Data"):
@@ -35,7 +35,6 @@ def clean_numeric_columns(df, cols):
             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
     return df
 
-# TTL diset ke 300 detik (5 menit) atau gunakan cache standar agar data stabil dan tidak berubah-ubah sendiri
 @st.cache_data(ttl=300)
 def load_all_data():
     url_rekap = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=0&single=true&output=csv"
@@ -116,15 +115,16 @@ st.subheader("📊 Grafik Perbandingan Total Penerimaan per Jenis Pajak")
 fig = go.Figure()
 x_jenis = df_rekap['Jenis Pajak']
 
+# Diagram Batang: Pajak Air Tanah (Pink Asli) & PBB (Nuansa Ungu Lavender yang Serasi)
 fig.add_trace(go.Bar(
     x=x_jenis, y=df_rekap['Agustus_2026'], name='Agustus 2026 (Tanpa Insentif)',
-    marker_color='#FFB6C1', marker_line_color='#FF1493', marker_line_width=1.5,
+    marker_color=['#FFB6C1', '#D8BFD8'], marker_line_color=['#FF1493', '#8A2BE2'], marker_line_width=1.5,
     hovertemplate="<b>Agustus:</b> Rp %{y:,.0f}<extra></extra>"
 ))
 
 fig.add_trace(go.Bar(
     x=x_jenis, y=df_rekap['September_2026'], name='September 2026 (Berjalan Insentif)',
-    marker_color='#FF69B4', marker_line_color='#C71585', marker_line_width=1.5,
+    marker_color=['#FF69B4', '#9370DB'], marker_line_color=['#C71585', '#4B0082'], marker_line_width=1.5,
     hovertemplate="<b>September:</b> Rp %{y:,.0f}<extra></extra>"
 ))
 
@@ -183,6 +183,7 @@ with tab1:
         df_air_weekly['Week_Label'] = "Week " + df_air_weekly['Week_Num'].astype(str)
 
         fig_cum_air = go.Figure()
+        # Tema Air Tanah: Nuansa Pink Lembut (#FFB6C1 & #C71585)
         fig_cum_air.add_trace(go.Scatter(
             x=df_air_weekly['Week_Label'], y=df_air_weekly['Agustus_Cum'], 
             mode='lines+markers', name='Akumulasi Agustus',
@@ -235,25 +236,26 @@ with tab2:
         df_pbb_weekly['Week_Label'] = "Week " + df_pbb_weekly['Week_Num'].astype(str)
 
         fig_cum_pbb = go.Figure()
+        # Tema PBB: Nuansa Ungu Lavender / Soft Mauve (#D8BFD8 & #9370DB) yang serasi dengan pink latar
         fig_cum_pbb.add_trace(go.Scatter(
             x=df_pbb_weekly['Week_Label'], y=df_pbb_weekly['Agustus_Cum'], 
             mode='lines+markers', name='Akumulasi Agustus',
             hovertemplate="<b>%{x}</b><br>Akumulasi: Rp %{y:,.0f}<extra></extra>",
-            line=dict(color='#FFB6C1', width=4)
+            line=dict(color='#D8BFD8', width=4)
         ))
         fig_cum_pbb.add_trace(go.Scatter(
             x=df_pbb_weekly['Week_Label'], y=df_pbb_weekly['September_Cum'], 
             mode='lines+markers', name='Akumulasi September',
             hovertemplate="<b>%{x}</b><br>Akumulasi: Rp %{y:,.0f}<extra></extra>",
-            line=dict(color='#C71585', width=4)
+            line=dict(color='#9370DB', width=4)
         ))
         
         fig_cum_pbb.update_layout(
             paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.5)',
-            title=dict(text="Kurva Akumulasi Mingguan (PBB)", font=dict(size=16, color='#C71585')),
-            xaxis=dict(title='Periode Pekan (Weekly)', type='category', tickfont=dict(color='#C71585')),
-            yaxis=dict(title='Total Kumulatif (Rp)', tickfont=dict(color='#C71585')),
-            legend=dict(bgcolor='#FFF0F5', bordercolor='#FF1493', borderwidth=1),
+            title=dict(text="Kurva Akumulasi Mingguan (PBB)", font=dict(size=16, color='#800080')),
+            xaxis=dict(title='Periode Pekan (Weekly)', type='category', tickfont=dict(color='#800080')),
+            yaxis=dict(title='Total Kumulatif (Rp)', tickfont=dict(color='#800080')),
+            legend=dict(bgcolor='#FFF0F5', bordercolor='#9370DB', borderwidth=1),
             hovermode="x unified"
         )
         st.plotly_chart(fig_cum_pbb, use_container_width=True)
