@@ -40,19 +40,15 @@ def clean_numeric_columns(df, cols):
 # Pastikan spreadsheet kamu memiliki 3 tab: "Rekap Pajak", "Pajak Air Tanah", dan "PBB"
 @st.cache_data(ttl=10)
 def load_all_data():
-    # Ganti link di bawah ini dengan link CSV Publish to Web Google Sheet kamu
-    base_id_url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?output=csv"
-    
-    # Sesuaikan GID untuk masing-masing Sheet
-    gid_rekap = "0"          # Ganti dengan GID sheet "Rekap Pajak"
-    gid_air_tanah = "123456" # Ganti dengan GID sheet "Pajak Air Tanah"
-    gid_pbb = "789012"       # Ganti dengan GID sheet "PBB"
+    # Masukkan link CSV Publish to Web masing-masing tab dari Google Sheets kamu di sini:
+    url_rekap = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=0&single=true&output=csv"
+    url_air = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=589514798&single=true&output=csv"
+    url_pbb = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=1312799199&single=true&output=csv"
     
     try:
-        df_rekap = pd.read_csv(base_id_url + gid_rekap)
+        df_rekap = pd.read_csv(url_rekap)
         df_rekap = clean_numeric_columns(df_rekap, ['Agustus_2026', 'September_2026'])
     except:
-        # Data cadangan Rekap jika link belum diatur
         df_rekap = pd.DataFrame({
             'Jenis Pajak': ['Pajak Air Tanah', 'PBB'],
             'Agustus_2026': [268866606, 420000000],
@@ -60,19 +56,18 @@ def load_all_data():
         })
         
     try:
-        df_air = pd.read_csv(base_id_url + gid_air_tanah)
+        df_air = pd.read_csv(url_air)
         df_air = clean_numeric_columns(df_air, ['Agustus_2026', 'September_2026'])
     except:
         df_air = pd.DataFrame(columns=['Tanggal', 'Agustus_2026', 'September_2026'])
         
     try:
-        df_pbb = pd.read_csv(base_id_url + gid_pbb)
+        df_pbb = pd.read_csv(url_pbb)
         df_pbb = clean_numeric_columns(df_pbb, ['Agustus_2026', 'September_2026'])
     except:
         df_pbb = pd.DataFrame(columns=['Tanggal', 'Agustus_2026', 'September_2026'])
         
     return df_rekap, df_air, df_pbb
-
 df_rekap, df_air, df_pbb = load_all_data()
 
 # ==========================================
