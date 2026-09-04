@@ -22,15 +22,14 @@ jenis_pajak = st.selectbox(
     ("Pajak Air Tanah", "PBB")
 )
 
-# Fungsi Ambil Data dari Google Sheets via CSV Link
-@st.cache_data(ttl=30) # Data otomatis diperbarui setiap 30 detik
+# Fungsi Ambil Data Berdasarkan Pilihan Tab/Sheet
+@st.cache_data(ttl=30)
 def load_google_sheet(sheet_name):
-    # Masukkan link CSV publik Google Sheet kamu di sini
-    # Contoh format link publish to web CSV dari Google Sheet:
-    # https://docs.google.com/spreadsheets/d/ID_SPREADSHEET_KAMU/export?format=csv&sheet=NamaSheet
-    
-    base_url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?output=csv"
-    url = base_url + sheet_name.replace(" ", "%20")
+    # 1. Masukkan link khusus untuk masing-masing sheet dari Google Sheets kamu
+    if sheet_name == "Pajak Air Tanah":
+        url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pubhtml?gid=0&single=true"
+    else:
+        url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pubhtml?gid=1312799199&single=true"
     
     try:
         df = pd.read_csv(url)
@@ -39,11 +38,18 @@ def load_google_sheet(sheet_name):
         return df
     except Exception as e:
         # Data cadangan jika link belum diatur agar tidak error
-        return pd.DataFrame({
-            'Tanggal': ['01', '02', '03'],
-            'Agustus_2026': [13403634, 12964578, 242498394],
-            'September_2026': [198523106, 0, 0]
-        })
+        if sheet_name == "Pajak Air Tanah":
+            return pd.DataFrame({
+                'Tanggal': ['01', '02', '03'],
+                'Agustus_2026': [13403634, 12964578, 242498394],
+                'September_2026': [198523106, 0, 0]
+            })
+        else:
+            return pd.DataFrame({
+                'Tanggal': ['01', '02', '03'],
+                'Agustus_2026': [50000000, 75000000, 100000000],
+                'September_2026': [120000000, 90000000, 0]
+            })
 
 df = load_google_sheet(jenis_pajak)
 
@@ -65,7 +71,7 @@ fig.add_trace(go.Bar(
     hovertemplate="<b>September:</b> Rp %{y:,.0f}<extra></extra>"
 ))
 
-# Logika Emoji Ceria / Sedih
+# Logika Emoji Ceria / Sedih & Total Akumulasi
 kenaikan_text = []
 for index, row in df.iterrows():
     if row['September_2026'] > 0:
@@ -79,7 +85,7 @@ for index, row in df.iterrows():
         kenaikan_text.append('')
 
 fig.add_trace(go.Scatter(
-    x=x_tanggal, y=df['September_2026'] + (df['September_2026'].max() * 0.05),
+    x=x_tanggal, y=df['September_2026'] + (df['September_2026'].max() * 0.05 if df['September_2026'].max() > 0 else 10),
     text=kenaikan_text, mode='text', textfont=dict(size=14, color='#C71585'),
     showlegend=False, hoverinfo='skip'
 ))
@@ -95,6 +101,15 @@ fig.update_layout(
 
 st.plotly_chart(fig, use_container_width=True)
 
+# Kotak Rangkuman Total Realisasi
+total_agus = df['Agustus_2026'].sum()
+total_sept = df['September_2026'].sum()
+
+col1, col2 = st.columns(2)
+col1.metric("🎀 Total Realisasi Agustus", f"Rp {total_agus:,.0f}".replace(',', '.'))
+col2.metric("👑 Total Realisasi September", f"Rp {total_sept:,.0f}".replace(',', '.'))
+
+st.write("---")
 st.write("### 📝 Tabel Rincian Data (Live dari Google Sheets)")
 st.dataframe(df.style.format({
     'Agustus_2026': 'Rp {:,.0f}',
