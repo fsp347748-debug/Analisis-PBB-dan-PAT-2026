@@ -1,14 +1,9 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-from streamlit_autorefresh import st_autorefresh
 
 # Konfigurasi Halaman Website Tema Princess
 st.set_page_config(page_title="Dashboard Analisis Insentif Fiskal", page_icon="🎀", layout="wide")
-
-# Fitur Auto-Refresh setiap 5 detik (5000 milidetik)
-# Ini akan membersihkan cache otomatis dan mengambil data terbaru dari Google Sheets
-count = st_autorefresh(interval=5000, key="datarefreshcounter")
 
 st.markdown("""
     <style>
@@ -20,13 +15,12 @@ st.markdown("""
 
 st.title("🎀 Dashboard Analisis Dampak Insentif Fiskal 👑")
 st.markdown("✨ **Evaluasi Perbandingan Penerimaan & Kepatuhan Wajib Pajak (Agustus vs September 2026)** ✨")
-st.markdown(f"🔄 *Status Sinkronisasi Live: Auto-refresh aktif (Pembaruan ke-{count})*")
 st.write("---")
 
-# Tombol Refresh Manual (opsional cadangan)
+# Tombol Refresh Manual yang Aman & Konsisten
 col_btn1, col_btn2 = st.columns([1, 4])
 with col_btn1:
-    if st.button("🔄 Segarkan Sekarang"):
+    if st.button("🔄 Segarkan Data"):
         st.cache_data.clear()
         st.rerun()
 
@@ -41,8 +35,8 @@ def clean_numeric_columns(df, cols):
             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
     return df
 
-# TTL diset ke 0 agar data benar-benar mengambil yang terbaru dari Google Sheets setiap 5 detik
-@st.cache_data(ttl=0)
+# TTL diset ke 300 detik (5 menit) atau gunakan cache standar agar data stabil dan tidak berubah-ubah sendiri
+@st.cache_data(ttl=300)
 def load_all_data():
     url_rekap = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=0&single=true&output=csv"
     url_air = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=589514798&single=true&output=csv"
