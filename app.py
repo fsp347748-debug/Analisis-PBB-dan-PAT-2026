@@ -22,35 +22,22 @@ jenis_pajak = st.selectbox(
     ("Pajak Air Tanah", "PBB")
 )
 
-# Fungsi Ambil Data Berdasarkan Pilihan Tab/Sheet
+# Fungsi Ambil Data Murni dari Google Sheets
 @st.cache_data(ttl=30)
 def load_google_sheet(sheet_name):
-    # 1. Masukkan link khusus untuk masing-masing sheet dari Google Sheets kamu
+    # Masukkan link CSV publik masing-masing sheet dari Google Sheets kantor kamu di sini:
     if sheet_name == "Pajak Air Tanah":
-        url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pubhtml?gid=0&single=true"
+        url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=0&single=true&output=csv"
     else:
-        url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pubhtml?gid=1312799199&single=true"
+        url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=1312799199&single=true&output=csv"
     
-    try:
-        df = pd.read_csv(url)
-        df['Agustus_2026'] = pd.to_numeric(df['Agustus_2026'], errors='coerce').fillna(0)
-        df['September_2026'] = pd.to_numeric(df['September_2026'], errors='coerce').fillna(0)
-        return df
-    except Exception as e:
-        # Data cadangan jika link belum diatur agar tidak error
-        if sheet_name == "Pajak Air Tanah":
-            return pd.DataFrame({
-                'Tanggal': ['01', '02', '03'],
-                'Agustus_2026': [13403634, 12964578, 242498394],
-                'September_2026': [198523106, 0, 0]
-            })
-        else:
-            return pd.DataFrame({
-                'Tanggal': ['01', '02', '03'],
-                'Agustus_2026': [50000000, 75000000, 100000000],
-                'September_2026': [120000000, 90000000, 0]
-            })
+    # Membaca data langsung dari link CSV online
+    df = pd.read_csv(url)
+    df['Agustus_2026'] = pd.to_numeric(df['Agustus_2026'], errors='coerce').fillna(0)
+    df['September_2026'] = pd.to_numeric(df['September_2026'], errors='coerce').fillna(0)
+    return df
 
+# Memuat data sesuai pilihan pajak
 df = load_google_sheet(jenis_pajak)
 
 # Membuat Grafik Interaktif Plotly
@@ -71,7 +58,7 @@ fig.add_trace(go.Bar(
     hovertemplate="<b>September:</b> Rp %{y:,.0f}<extra></extra>"
 ))
 
-# Logika Emoji Ceria / Sedih & Total Akumulasi
+# Logika Emoji Ceria / Sedih
 kenaikan_text = []
 for index, row in df.iterrows():
     if row['September_2026'] > 0:
@@ -84,8 +71,9 @@ for index, row in df.iterrows():
     else:
         kenaikan_text.append('')
 
+max_val = max(df['Agustus_2026'].max(), df['September_2026'].max())
 fig.add_trace(go.Scatter(
-    x=x_tanggal, y=df['September_2026'] + (df['September_2026'].max() * 0.05 if df['September_2026'].max() > 0 else 10),
+    x=x_tanggal, y=df['September_2026'] + (max_val * 0.05 if max_val > 0 else 10),
     text=kenaikan_text, mode='text', textfont=dict(size=14, color='#C71585'),
     showlegend=False, hoverinfo='skip'
 ))
@@ -101,7 +89,7 @@ fig.update_layout(
 
 st.plotly_chart(fig, use_container_width=True)
 
-# Kotak Rangkuman Total Realisasi
+# Kotak Rangkuman Total Akumulasi Sebulan
 total_agus = df['Agustus_2026'].sum()
 total_sept = df['September_2026'].sum()
 
