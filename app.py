@@ -197,7 +197,7 @@ st.plotly_chart(fig, use_container_width=True)
 st.write("---")
 
 # ==========================================
-# 3. BAGIAN BAWAH: ANALISIS HARIAN & KUMULATIF
+# 3. BAGIAN BAWAH: ANALISIS HARIAN & KUMULATIF MULUS
 # ==========================================
 st.subheader("📋 Rincian Harian, Kurva Kumulatif Workdays & Segmentasi Wajib Pajak")
 
@@ -209,18 +209,32 @@ with tab1:
         df_air_cum = df_air.copy()
         df_air_cum['Agustus_Cum'] = df_air_cum['Agustus_2026'].cumsum()
         df_air_cum['September_Cum'] = df_air_cum['September_2026'].cumsum()
-        
-        x_label_agus = df_air_cum['Label_Agustus']
-        x_label_sept = df_air_cum['Label_September']
+        df_air_cum['Workday_Index'] = range(1, len(df_air_cum) + 1)
 
         fig_cum_air = go.Figure()
-        fig_cum_air.add_trace(go.Scatter(x=x_label_agus, y=df_air_cum['Agustus_Cum'], mode='lines+markers', name='Akumulasi Agustus', line=dict(color='#FFB6C1', width=3)))
-        fig_cum_air.add_trace(go.Scatter(x=x_label_sept, y=df_air_cum['September_Cum'], mode='lines+markers', name='Akumulasi September', line=dict(color='#C71585', width=3)))
+        
+        # Kurva Agustus
+        fig_cum_air.add_trace(go.Scatter(
+            x=df_air_cum['Workday_Index'], y=df_air_cum['Agustus_Cum'], 
+            mode='lines+markers', name='Akumulasi Agustus',
+            text=df_air_cum['Label_Agustus'],
+            hovertemplate="<b>%{text}</b><br>Akumulasi: Rp %{y:,.0f}<extra></extra>",
+            line=dict(color='#FFB6C1', width=3)
+        ))
+        
+        # Kurva September
+        fig_cum_air.add_trace(go.Scatter(
+            x=df_air_cum['Workday_Index'], y=df_air_cum['September_Cum'], 
+            mode='lines+markers', name='Akumulasi September',
+            text=df_air_cum['Label_September'],
+            hovertemplate="<b>%{text}</b><br>Akumulasi: Rp %{y:,.0f}<extra></extra>",
+            line=dict(color='#C71585', width=3)
+        ))
         
         fig_cum_air.update_layout(
             paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.5)',
             title=dict(text="Kurva Kumulatif Workdays (Air Tanah)", font=dict(size=16, color='#C71585')),
-            xaxis=dict(title='Pekan & Hari Kerja (W-Day)', type='category', tickfont=dict(color='#C71585')),
+            xaxis=dict(title='Urutan Hari Kerja Efektif (Workday Index)', tickfont=dict(color='#C71585')),
             yaxis=dict(title='Total Kumulatif (Rp)', tickfont=dict(color='#C71585')),
             legend=dict(bgcolor='#FFF0F5', bordercolor='#FF1493', borderwidth=1),
             hovermode="x unified"
@@ -253,18 +267,32 @@ with tab2:
         df_pbb_cum = df_pbb.copy()
         df_pbb_cum['Agustus_Cum'] = df_pbb_cum['Agustus_2026'].cumsum()
         df_pbb_cum['September_Cum'] = df_pbb_cum['September_2026'].cumsum()
-        
-        x_label_agus_pbb = df_pbb_cum['Label_Agustus']
-        x_label_sept_pbb = df_pbb_cum['Label_September']
+        df_pbb_cum['Workday_Index'] = range(1, len(df_pbb_cum) + 1)
 
         fig_cum_pbb = go.Figure()
-        fig_cum_pbb.add_trace(go.Scatter(x=x_label_agus_pbb, y=df_pbb_cum['Agustus_Cum'], mode='lines+markers', name='Akumulasi Agustus', line=dict(color='#FFB6C1', width=3)))
-        fig_cum_pbb.add_trace(go.Scatter(x=x_label_sept_pbb, y=df_pbb_cum['September_Cum'], mode='lines+markers', name='Akumulasi September', line=dict(color='#C71585', width=3)))
+        
+        # Kurva Agustus PBB
+        fig_cum_pbb.add_trace(go.Scatter(
+            x=df_pbb_cum['Workday_Index'], y=df_pbb_cum['Agustus_Cum'], 
+            mode='lines+markers', name='Akumulasi Agustus',
+            text=df_pbb_cum['Label_Agustus'],
+            hovertemplate="<b>%{text}</b><br>Akumulasi: Rp %{y:,.0f}<extra></extra>",
+            line=dict(color='#FFB6C1', width=3)
+        ))
+        
+        # Kurva September PBB
+        fig_cum_pbb.add_trace(go.Scatter(
+            x=df_pbb_cum['Workday_Index'], y=df_pbb_cum['September_Cum'], 
+            mode='lines+markers', name='Akumulasi September',
+            text=df_pbb_cum['Label_September'],
+            hovertemplate="<b>%{text}</b><br>Akumulasi: Rp %{y:,.0f}<extra></extra>",
+            line=dict(color='#C71585', width=3)
+        ))
         
         fig_cum_pbb.update_layout(
             paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.5)',
             title=dict(text="Kurva Kumulatif Workdays (PBB)", font=dict(size=16, color='#C71585')),
-            xaxis=dict(title='Pekan & Hari Kerja (W-Day)', type='category', tickfont=dict(color='#C71585')),
+            xaxis=dict(title='Urutan Hari Kerja Efektif (Workday Index)', tickfont=dict(color='#C71585')),
             yaxis=dict(title='Total Kumulatif (Rp)', tickfont=dict(color='#C71585')),
             legend=dict(bgcolor='#FFF0F5', bordercolor='#FF1493', borderwidth=1),
             hovermode="x unified"
