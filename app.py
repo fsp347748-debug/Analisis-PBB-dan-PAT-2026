@@ -30,7 +30,7 @@ jenis_pajak = st.selectbox(
     ("Pajak Air Tanah", "PBB")
 )
 
-# Fungsi Ambil Data Murni dari Google Sheets & Pembersih Format Angka Indonesia
+# Fungsi Ambil Data Murni dari Google Sheets & Pembersih Titik Ribuan
 @st.cache_data(ttl=10)
 def load_google_sheet(sheet_name):
     if sheet_name == "Pajak Air Tanah":
@@ -40,11 +40,14 @@ def load_google_sheet(sheet_name):
     
     df = pd.read_csv(url)
     
-    # Membersihkan format titik ribuan dan koma desimal khas Indonesia (contoh: "13.403.634,00")
+    # Membersihkan titik pemisah ribuan dari Google Sheets secara total
     for col in ['Agustus_2026', 'September_2026']:
         if col in df.columns:
-            if df[col].dtype == 'object':
-                df[col] = df[col].astype(str).str.replace('.', '', regex=False).str.replace(',', '.', regex=False)
+            df[col] = (
+                df[col].astype(str)
+                .str.replace('.', '', regex=False)
+                .str.replace(',', '', regex=False)
+            )
             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
             
     return df
