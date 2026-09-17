@@ -94,19 +94,11 @@ col_kpi3.metric("⚖️ Selisih Pertumbuhan Absolut", f"Rp {selisih_total:,.0f}"
 # 1.5 ANALISIS APPLE-TO-APPLE (HARI KERJA DINAMIS)
 # ==========================================
 st.subheader("🏛️ Analisis Apple-to-Apple: Normalisasi Hari Kerja")
-
-# Menghitung hari kerja Agustus secara penuh (misal: 21 hari kerja)
 hari_kerja_agus = 21 
 
-# Menghitung jumlah hari kerja September secara dinamis berdasarkan data harian yang benar-benar terinput (tidak nol)
 if not df_air.empty and 'DateTime_Sort' in df_air.columns:
-    # Filter baris di September yang nilai penerimaannya > 0 atau tanggalnya valid (tidak NaT)
     valid_sept_days = df_air[df_air['September_2026'] > 0]['DateTime_Sort'].dropna()
-    if not valid_sept_days.empty:
-        # Menghitung jumlah hari unik yang sudah terinput di bulan September
-        hari_kerja_sept = valid_sept_days.nunique()
-    else:
-        hari_kerja_sept = 1
+    hari_kerja_sept = valid_sept_days.nunique() if not valid_sept_days.empty else 1
 else:
     hari_kerja_sept = 1
 
@@ -179,7 +171,7 @@ st.plotly_chart(fig, use_container_width=True)
 st.write("---")
 
 # ==========================================
-# 3. BAGIAN BAWAH: ANALISIS HARIAN, KUMULATIF & GRAFIK SEGMENTASI WP
+# 3. BAGIAN BAWAH: ANALISIS HARIAN & KURVA KUMULATIF MINGGUAN
 # ==========================================
 st.subheader("📋 Rincian Harian, Kurva Kumulatif Mingguan & Segmentasi Wajib Pajak")
 
@@ -226,27 +218,36 @@ with tab1:
     else:
         st.info("Belum ada data harian untuk Pajak Air Tanah.")
 
-    st.write("#### 👥 Grafik & Rincian Segmentasi: Jumlah Wajib Pajak yang Membayar (Air Tanah)")
-    if not df_seg_air.empty:
-        # Visualisasi Grafik Batang Segmentasi WP Air Tanah
-        fig_seg_air = go.Figure()
-        fig_seg_air.add_trace(go.Bar(
-            x=df_seg_air['Tanggal'], y=df_seg_air['Agustus_2026'], name='Agustus 2026 (WP)',
-            marker_color='#FFB6C1', hovertemplate="<b>Agustus:</b> %{y:,.0f} WP<extra></extra>"
+    st.write("#### 👥 Kurva Kumulatif Mingguan Jumlah Wajib Pajak (Air Tanah)")
+    if not df_seg_air.empty and 'Week_Num' in df_seg_air.columns:
+        df_seg_air_weekly = df_seg_air.groupby('Week_Num')[['Agustus_2026', 'September_2026']].sum().reset_index()
+        df_seg_air_weekly['Agustus_Cum'] = df_seg_air_weekly['Agustus_2026'].cumsum()
+        df_seg_air_weekly['September_Cum'] = df_seg_air_weekly['September_2026'].cumsum()
+        df_seg_air_weekly['Week_Label'] = "Week " + df_seg_air_weekly['Week_Num'].astype(str)
+
+        fig_seg_cum_air = go.Figure()
+        # Mengubah grafik WP menjadi kurva garis melengkung (spline) menyerupai gambar referensi
+        fig_seg_cum_air.add_trace(go.Scatter(
+            x=df_seg_air_weekly['Week_Label'], y=df_seg_air_weekly['Agustus_Cum'], 
+            mode='lines+markers', name='Akumulasi WP Agustus',
+            hovertemplate="<b>%{x}</b><br>Akumulasi WP: %{y:,.0f} WP<extra></extra>",
+            line=dict(color='#FFB6C1', width=4, shape='spline')
         ))
-        fig_seg_air.add_trace(go.Bar(
-            x=df_seg_air['Tanggal'], y=df_seg_air['September_2026'], name='September 2026 (WP)',
-            marker_color='#C71585', hovertemplate="<b>September:</b> %{y:,.0f} WP<extra></extra>"
+        fig_seg_cum_air.add_trace(go.Scatter(
+            x=df_seg_air_weekly['Week_Label'], y=df_seg_air_weekly['September_Cum'], 
+            mode='lines+markers', name='Akumulasi WP September',
+            hovertemplate="<b>%{x}</b><br>Akumulasi WP: %{y:,.0f} WP<extra></extra>",
+            line=dict(color='#C71585', width=4, shape='spline')
         ))
-        fig_seg_air.update_layout(
-            barmode='group', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.5)',
-            title=dict(text="Perbandingan Jumlah Wajib Pajak Harian (Air Tanah)", font=dict(size=16, color='#C71585')),
-            xaxis=dict(title='Tanggal', tickfont=dict(color='#C71585'), type='category'),
-            yaxis=dict(title='Jumlah WP', tickfont=dict(color='#C71585')),
+        fig_seg_cum_air.update_layout(
+            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.5)',
+            title=dict(text="Kurva Akumulasi Mingguan Jumlah Wajib Pajak (Air Tanah)", font=dict(size=16, color='#C71585')),
+            xaxis=dict(title='Periode Pekan (Weekly)', type='category', tickfont=dict(color='#C71585')),
+            yaxis=dict(title='Kumulatif Jumlah WP', tickfont=dict(color='#C71585')),
             legend=dict(bgcolor='#FFF0F5', bordercolor='#FF1493', borderwidth=1),
             hovermode="x unified"
         )
-        st.plotly_chart(fig_seg_air, use_container_width=True)
+        st.plotly_chart(fig_seg_cum_air, use_container_width=True)
 
         df_seg_air_tabel = df_seg_air[['Tanggal', 'Agustus_2026', 'September_2026']].copy()
         st.dataframe(df_seg_air_tabel.style.format({
@@ -297,27 +298,36 @@ with tab2:
     else:
         st.info("Belum ada data harian untuk PBB.")
 
-    st.write("#### 👥 Grafik & Rincian Segmentasi: Jumlah NOP / Wajib Pajak yang Membayar (PBB)")
-    if not df_seg_pbb.empty:
-        # Visualisasi Grafik Batang Segmentasi NOP PBB
-        fig_seg_pbb = go.Figure()
-        fig_seg_pbb.add_trace(go.Bar(
-            x=df_seg_pbb['Tanggal'], y=df_seg_pbb['Agustus_2026'], name='Agustus 2026 (NOP)',
-            marker_color='#D8BFD8', hovertemplate="<b>Agustus:</b> %{y:,.0f} NOP<extra></extra>"
+    st.write("#### 👥 Kurva Kumulatif Mingguan Jumlah NOP Wajib Pajak (PBB)")
+    if not df_seg_pbb.empty and 'Week_Num' in df_seg_pbb.columns:
+        df_seg_pbb_weekly = df_seg_pbb.groupby('Week_Num')[['Agustus_2026', 'September_2026']].sum().reset_index()
+        df_seg_pbb_weekly['Agustus_Cum'] = df_seg_pbb_weekly['Agustus_2026'].cumsum()
+        df_seg_pbb_weekly['September_Cum'] = df_seg_pbb_weekly['September_2026'].cumsum()
+        df_seg_pbb_weekly['Week_Label'] = "Week " + df_seg_pbb_weekly['Week_Num'].astype(str)
+
+        fig_seg_cum_pbb = go.Figure()
+        # Mengubah grafik NOP PBB menjadi kurva garis melengkung (spline) persis seperti contoh gambar
+        fig_seg_cum_pbb.add_trace(go.Scatter(
+            x=df_seg_pbb_weekly['Week_Label'], y=df_seg_pbb_weekly['Agustus_Cum'], 
+            mode='lines+markers', name='Akumulasi NOP Agustus',
+            hovertemplate="<b>%{x}</b><br>Akumulasi NOP: %{y:,.0f} NOP<extra></extra>",
+            line=dict(color='#D8BFD8', width=4, shape='spline')
         ))
-        fig_seg_pbb.add_trace(go.Bar(
-            x=df_seg_pbb['Tanggal'], y=df_seg_pbb['September_2026'], name='September 2026 (NOP)',
-            marker_color='#9370DB', hovertemplate="<b>September:</b> %{y:,.0f} NOP<extra></extra>"
+        fig_seg_cum_pbb.add_trace(go.Scatter(
+            x=df_seg_pbb_weekly['Week_Label'], y=df_seg_pbb_weekly['September_Cum'], 
+            mode='lines+markers', name='Akumulasi NOP September',
+            hovertemplate="<b>%{x}</b><br>Akumulasi NOP: %{y:,.0f} NOP<extra></extra>",
+            line=dict(color='#9370DB', width=4, shape='spline')
         ))
-        fig_seg_pbb.update_layout(
-            barmode='group', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.5)',
-            title=dict(text="Perbandingan Jumlah NOP Harian (PBB)", font=dict(size=16, color='#800080')),
-            xaxis=dict(title='Tanggal', tickfont=dict(color='#800080'), type='category'),
-            yaxis=dict(title='Jumlah NOP', tickfont=dict(color='#800080')),
+        fig_seg_cum_pbb.update_layout(
+            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.5)',
+            title=dict(text="Kurva Kumulatif Jumlah NOP Mingguan (PBB)", font=dict(size=16, color='#800080')),
+            xaxis=dict(title='Periode Pekan (Weekly)', type='category', tickfont=dict(color='#800080')),
+            yaxis=dict(title='Kumulatif Jumlah NOP', tickfont=dict(color='#800080')),
             legend=dict(bgcolor='#FFF0F5', bordercolor='#9370DB', borderwidth=1),
             hovermode="x unified"
         )
-        st.plotly_chart(fig_seg_pbb, use_container_width=True)
+        st.plotly_chart(fig_seg_cum_pbb, use_container_width=True)
 
         df_seg_pbb_tabel = df_seg_pbb[['Tanggal', 'Agustus_2026', 'September_2026']].copy()
         st.dataframe(df_seg_pbb_tabel.style.format({
