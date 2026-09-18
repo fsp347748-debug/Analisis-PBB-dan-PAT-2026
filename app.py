@@ -43,8 +43,10 @@ def load_all_data():
     url_seg_air = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=1692042397&single=true&output=csv"
     url_seg_pbb = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=349029387&single=true&output=csv"
     
-    # URL GID baru untuk Segmentasi PBB Piutang (sesuaikan jika GID spreadsheet-mu berbeda)
-    url_piutang_pbb = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=658954115&single=true&output=csv" # Ganti GID jika ada GID khusus piutang
+    # URL GID untuk Piutang PBB & Segmentasi Piutang PBB 
+    # (Silakan sesuaikan nilai gid=... jika GID di Google Sheets-mu berbeda)
+    url_piutang_pbb = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=1078894258&single=true&output=csv"
+    url_seg_piutang_pbb = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=658954115&single=true&output=csv"
 
     def process_daily_df(url, bulan_str):
         try:
@@ -75,10 +77,11 @@ def load_all_data():
     df_seg_air = process_daily_df(url_seg_air, '08')
     df_seg_pbb = process_daily_df(url_seg_pbb, '08')
     df_piutang_pbb = process_daily_df(url_piutang_pbb, '08')
+    df_seg_piutang_pbb = process_daily_df(url_seg_piutang_pbb, '08')
         
-    return df_rekap, df_air, df_pbb, df_seg_air, df_seg_pbb, df_piutang_pbb
+    return df_rekap, df_air, df_pbb, df_seg_air, df_seg_pbb, df_piutang_pbb, df_seg_piutang_pbb
 
-df_rekap, df_air, df_pbb, df_seg_air, df_seg_pbb, df_piutang_pbb = load_all_data()
+df_rekap, df_air, df_pbb, df_seg_air, df_seg_pbb, df_piutang_pbb, df_seg_piutang_pbb = load_all_data()
 
 # ==========================================
 # 1. KARTU KINERJA UTAMA (KPI) REKAP TOTAL
@@ -355,48 +358,87 @@ with tab2:
         st.info("Belum ada data segmentasi NOP PBB.")
 
     # ==========================================
-    # 4. TAMBAHAN: KURVA PERBANDINGAN / SCATTER PIUTANG PBB (AGUSTUS vs SEPTEMBER)
+    # 5. TAMBAHAN: BAGIAN PIUTANG PBB & SEGMENTASI PIUTANG PBB DI BAWAH PBB
     # ==========================================
     st.write("---")
-    st.write("#### 🏷️ Analisis Perbandingan Segmentasi PBB Piutang (Agustus vs September)")
-    
-    if not df_piutang_pbb.empty:
-        fig_piutang = go.Figure()
-        
-        # Garis/Scatter Bayangan atau Potensi (Agustus)
-        fig_piutang.add_trace(go.Scatter(
-            x=df_piutang_pbb.index, y=df_piutang_pbb.get('Agustus_2026', []),
-            mode='lines+markers', name='Agustus 2026 (Piutang PBB)',
-            line=dict(shape='spline', color='#D8BFD8', width=3, dash='dash'),
-            marker=dict(size=8, color='#D8BFD8'),
-            hovertemplate="<b>Agustus:</b> Rp %{y:,.2f}<extra></extra>"
-        ))
+    st.markdown("### 🏷️ Analisis Tambahan: Piutang PBB & Segmentasi Piutang PBB")
 
-        # Garis Utama (September) dengan fill warna ungu lembut di bawahnya
-        fig_piutang.add_trace(go.Scatter(
-            x=df_piutang_pbb.index, y=df_piutang_pbb.get('September_2026', []),
-            mode='lines+markers', name='September 2026 (Piutang PBB)',
-            fill='tozeroy',
-            fillcolor='rgba(147, 112, 219, 0.15)',
-            line=dict(shape='spline', color='#9370DB', width=4),
-            marker=dict(size=9, color='#9370DB'),
-            hovertemplate="<b>September:</b> Rp %{y:,.2f}<extra></extra>"
-        ))
+    # A. Kurva Kumulatif Mingguan & Harian Piutang PBB (Penerimaan Nominal)
+    st.write("#### 📈 Kurva Kumulatif Berbasis Pekan (Weekly Cumulative - Piutang PBB)")
+    if not df_piutang_pbb.empty and 'Week_Num' in df_piutang_pbb.columns:
+        df_piutang_weekly = df_piutang_pbb.groupby('Week_Num')[['Agustus_2026', 'September_2026']].sum().reset_index()
+        df_piutang_weekly['Agustus_Cum'] = df_piutang_weekly['Agustus_2026'].cumsum()
+        df_piutang_weekly['September_Cum'] = df_piutang_weekly['September_2026'].cumsum()
+        df_piutang_weekly['Week_Label'] = "Week " + df_piutang_weekly['Week_Num'].astype(str)
 
-        fig_piutang.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(255,255,255,0.9)',
-            height=450,
-            title=dict(text="<b>Kurva Perbandingan Segmentasi PBB Piutang (Agustus vs September)</b>", font=dict(size=15, color='#800080', family="Georgia")),
-            xaxis=dict(title='<b>Kategori / Urutan Segmentasi Piutang</b>', showgrid=True, gridcolor='rgba(230, 230, 230, 0.6)'),
-            yaxis=dict(title='<b>Nilai Piutang (Rp)</b>', showgrid=True, gridcolor='rgba(230, 230, 230, 0.6)', tickformat=',.0f'),
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, bgcolor='rgba(255,255,255,0.9)'),
+        fig_cum_piutang = go.Figure()
+        fig_cum_piutang.add_trace(go.Scatter(
+            x=df_piutang_weekly['Week_Label'], y=df_piutang_weekly['Agustus_Cum'], 
+            mode='lines+markers', name='Akumulasi Piutang Agustus',
+            hovertemplate="<b>%{x}</b><br>Akumulasi Piutang: Rp %{y:,.0f}<extra></extra>",
+            line=dict(color='#D8BFD8', width=4)
+        ))
+        fig_cum_piutang.add_trace(go.Scatter(
+            x=df_piutang_weekly['Week_Label'], y=df_piutang_weekly['September_Cum'], 
+            mode='lines+markers', name='Akumulasi Piutang September',
+            hovertemplate="<b>%{x}</b><br>Akumulasi Piutang: Rp %{y:,.0f}<extra></extra>",
+            line=dict(color='#9370DB', width=4)
+        ))
+        fig_cum_piutang.update_layout(
+            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.5)',
+            title=dict(text="Kurva Akumulasi Mingguan (Piutang PBB)", font=dict(size=16, color='#800080')),
+            xaxis=dict(title='Periode Pekan (Weekly)', type='category', tickfont=dict(color='#800080')),
+            yaxis=dict(title='Total Kumulatif Piutang (Rp)', tickfont=dict(color='#800080')),
+            legend=dict(bgcolor='#FFF0F5', bordercolor='#9370DB', borderwidth=1),
             hovermode="x unified"
         )
-        st.plotly_chart(fig_piutang, use_container_width=True)
+        st.plotly_chart(fig_cum_piutang, use_container_width=True)
 
-        st.dataframe(df_piutang_pbb.style.format({
-            col: 'Rp {:,.2f}' for col in df_piutang_pbb.columns if col not in ['Tanggal', 'Week_Num'] and pd.api.types.is_numeric_dtype(df_piutang_pbb[col])
-        }, na_rep='-'), use_container_width=True)
+    st.write("#### 💰 Rincian Nominal Harian Piutang PBB")
+    if not df_piutang_pbb.empty:
+        df_piutang_tabel = df_piutang_pbb[['Tanggal', 'Agustus_2026', 'September_2026']].copy()
+        st.dataframe(df_piutang_tabel.style.format({
+            'Agustus_2026': 'Rp {:,.0f}',
+            'September_2026': 'Rp {:,.0f}'
+        }), use_container_width=True)
     else:
-        st.info("Data Segmentasi PBB Piutang belum tersedia atau format kolom perlu disesuaikan.")
+        st.info("Belum ada data harian untuk Piutang PBB.")
+
+    # B. Kurva Kumulatif Mingguan Segmentasi Piutang PBB (Jumlah WP / NOP yang Memanfaatkan)
+    st.write("#### 👥 Kurva Kumulatif Mingguan Segmentasi Piutang PBB (Jumlah WP / NOP)")
+    if not df_seg_piutang_pbb.empty and 'Week_Num' in df_seg_piutang_pbb.columns:
+        df_seg_piutang_weekly = df_seg_piutang_pbb.groupby('Week_Num')[['Agustus_2026', 'September_2026']].sum().reset_index()
+        df_seg_piutang_weekly['Agustus_Cum'] = df_seg_piutang_weekly['Agustus_2026'].cumsum()
+        df_seg_piutang_weekly['September_Cum'] = df_seg_piutang_weekly['September_2026'].cumsum()
+        df_seg_piutang_weekly['Week_Label'] = "Week " + df_seg_piutang_weekly['Week_Num'].astype(str)
+
+        fig_seg_cum_piutang = go.Figure()
+        fig_seg_cum_piutang.add_trace(go.Scatter(
+            x=df_seg_piutang_weekly['Week_Label'], y=df_seg_piutang_weekly['Agustus_Cum'], 
+            mode='lines+markers', name='Akumulasi WP Piutang Agustus',
+            hovertemplate="<b>%{x}</b><br>Akumulasi WP Piutang: %{y:,.0f} WP<extra></extra>",
+            line=dict(color='#D8BFD8', width=4, shape='spline')
+        ))
+        fig_seg_cum_piutang.add_trace(go.Scatter(
+            x=df_seg_piutang_weekly['Week_Label'], y=df_seg_piutang_weekly['September_Cum'], 
+            mode='lines+markers', name='Akumulasi WP Piutang September',
+            hovertemplate="<b>%{x}</b><br>Akumulasi WP Piutang: %{y:,.0f} WP<extra></extra>",
+            line=dict(color='#9370DB', width=4, shape='spline')
+        ))
+        fig_seg_cum_piutang.update_layout(
+            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.5)',
+            title=dict(text="Kurva Kumulatif Mingguan Jumlah WP Segmentasi Piutang PBB", font=dict(size=16, color='#800080')),
+            xaxis=dict(title='Periode Pekan (Weekly)', type='category', tickfont=dict(color='#800080')),
+            yaxis=dict(title='Kumulatif Jumlah WP / NOP', tickfont=dict(color='#800080')),
+            legend=dict(bgcolor='#FFF0F5', bordercolor='#9370DB', borderwidth=1),
+            hovermode="x unified"
+        )
+        st.plotly_chart(fig_seg_cum_piutang, use_container_width=True)
+
+        df_seg_piutang_tabel = df_seg_piutang_pbb[['Tanggal', 'Agustus_2026', 'September_2026']].copy()
+        st.dataframe(df_seg_piutang_tabel.style.format({
+            'Agustus_2026': '{:,.0f} WP/NOP',
+            'September_2026': '{:,.0f} WP/NOP'
+        }), use_container_width=True)
+    else:
+        st.info("Belum ada data segmentasi Piutang PBB.")
