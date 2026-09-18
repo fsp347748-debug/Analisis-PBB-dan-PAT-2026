@@ -252,13 +252,13 @@ with tab1:
             x=df_air_weekly['Week_Label'], y=df_air_weekly['Agustus_Cum'], 
             mode='lines+markers', name='Akumulasi Agustus',
             hovertemplate="<b>%{x}</b><br>Akumulasi: Rp %{y:,.0f}<extra></extra>",
-            line=dict(color='#FFB6C1', width=4)
+            line=dict(color='#FFB6C1', width=4, shape='linear')
         ))
         fig_cum_air.add_trace(go.Scatter(
             x=df_air_weekly['Week_Label'], y=df_air_weekly['September_Cum'], 
             mode='lines+markers', name='Akumulasi September',
             hovertemplate="<b>%{x}</b><br>Akumulasi: Rp %{y:,.0f}<extra></extra>",
-            line=dict(color='#C71585', width=4)
+            line=dict(color='#C71585', width=4, shape='linear')
         ))
         fig_cum_air.update_layout(
             paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.5)',
@@ -292,13 +292,13 @@ with tab1:
             x=df_seg_air_weekly['Week_Label'], y=df_seg_air_weekly['Agustus_Cum'], 
             mode='lines+markers', name='Akumulasi WP Agustus',
             hovertemplate="<b>%{x}</b><br>Akumulasi WP: %{y:,.0f} WP<extra></extra>",
-            line=dict(color='#FFB6C1', width=4, shape='spline')
+            line=dict(color='#FFB6C1', width=4, shape='linear')
         ))
         fig_seg_cum_air.add_trace(go.Scatter(
             x=df_seg_air_weekly['Week_Label'], y=df_seg_air_weekly['September_Cum'], 
             mode='lines+markers', name='Akumulasi WP September',
             hovertemplate="<b>%{x}</b><br>Akumulasi WP: %{y:,.0f} WP<extra></extra>",
-            line=dict(color='#C71585', width=4, shape='spline')
+            line=dict(color='#C71585', width=4, shape='linear')
         ))
         fig_seg_cum_air.update_layout(
             paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.5)',
@@ -348,13 +348,13 @@ with tab2:
             x=df_pbb_weekly['Week_Label'], y=df_pbb_weekly['Agustus_Cum'], 
             mode='lines+markers', name='Akumulasi Agustus',
             hovertemplate="<b>%{x}</b><br>Akumulasi: Rp %{y:,.0f}<extra></extra>",
-            line=dict(color='#D8BFD8', width=4)
+            line=dict(color='#D8BFD8', width=4, shape='linear')
         ))
         fig_cum_pbb.add_trace(go.Scatter(
             x=df_pbb_weekly['Week_Label'], y=df_pbb_weekly['September_Cum'], 
             mode='lines+markers', name='Akumulasi September',
             hovertemplate="<b>%{x}</b><br>Akumulasi: Rp %{y:,.0f}<extra></extra>",
-            line=dict(color='#9370DB', width=4)
+            line=dict(color='#9370DB', width=4, shape='linear')
         ))
         fig_cum_pbb.update_layout(
             paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.5)',
@@ -388,13 +388,13 @@ with tab2:
             x=df_seg_pbb_weekly['Week_Label'], y=df_seg_pbb_weekly['Agustus_Cum'], 
             mode='lines+markers', name='Akumulasi NOP Agustus',
             hovertemplate="<b>%{x}</b><br>Akumulasi NOP: %{y:,.0f} NOP<extra></extra>",
-            line=dict(color='#D8BFD8', width=4, shape='spline')
+            line=dict(color='#D8BFD8', width=4, shape='linear')
         ))
         fig_seg_cum_pbb.add_trace(go.Scatter(
             x=df_seg_pbb_weekly['Week_Label'], y=df_seg_pbb_weekly['September_Cum'], 
             mode='lines+markers', name='Akumulasi NOP September',
             hovertemplate="<b>%{x}</b><br>Akumulasi NOP: %{y:,.0f} NOP<extra></extra>",
-            line=dict(color='#9370DB', width=4, shape='spline')
+            line=dict(color='#9370DB', width=4, shape='linear')
         ))
         fig_seg_cum_pbb.update_layout(
             paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.5)',
@@ -433,13 +433,13 @@ with tab2:
             x=df_piutang_weekly['Week_Label'], y=df_piutang_weekly['Agustus_Cum'], 
             mode='lines+markers', name='Akumulasi Piutang Agustus',
             hovertemplate="<b>%{x}</b><br>Akumulasi Piutang: Rp %{y:,.0f}<extra></extra>",
-            line=dict(color='#D8BFD8', width=4)
+            line=dict(color='#D8BFD8', width=4, shape='linear')
         ))
         fig_cum_piutang.add_trace(go.Scatter(
             x=df_piutang_weekly['Week_Label'], y=df_piutang_weekly['September_Cum'], 
             mode='lines+markers', name='Akumulasi Piutang September',
             hovertemplate="<b>%{x}</b><br>Akumulasi Piutang: Rp %{y:,.0f}<extra></extra>",
-            line=dict(color='#9370DB', width=4)
+            line=dict(color='#9370DB', width=4, shape='linear')
         ))
         fig_cum_piutang.update_layout(
             paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.5)',
@@ -474,13 +474,13 @@ with tab2:
             x=df_seg_piutang_weekly['Week_Label'], y=df_seg_piutang_weekly['Agustus_Cum'], 
             mode='lines+markers', name='Akumulasi WP Piutang Agustus',
             hovertemplate="<b>%{x}</b><br>Akumulasi WP Piutang: %{y:,.0f} WP<extra></extra>",
-            line=dict(color='#D8BFD8', width=4, shape='spline')
+            line=dict(color='#D8BFD8', width=4, shape='linear')
         ))
         fig_seg_cum_piutang.add_trace(go.Scatter(
             x=df_seg_piutang_weekly['Week_Label'], y=df_seg_piutang_weekly['September_Cum'], 
             mode='lines+markers', name='Akumulasi WP Piutang September',
             hovertemplate="<b>%{x}</b><br>Akumulasi WP Piutang: %{y:,.0f} WP<extra></extra>",
-            line=dict(color='#9370DB', width=4, shape='spline')
+            line=dict(color='#9370DB', width=4, shape='linear')
         ))
         fig_seg_cum_piutang.update_layout(
             paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.5)',
