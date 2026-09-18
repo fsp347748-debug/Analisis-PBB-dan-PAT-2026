@@ -29,8 +29,16 @@ def clean_numeric_columns(df, cols):
         if col in df.columns:
             df[col] = (
                 df[col].astype(str)
-                .str.replace('.', '', regex=False)
-                .str.replace(',', '', regex=False)
+                .str.strip()
+                .str.replace('Rp', '', regex=False)
+                .str.replace('s.d.', '', regex=False)
+            )
+            # Menangani format angka Indonesia (titik sebagai pemisah ribuan atau koma sebagai desimal)
+            # Jika data memiliki titik ribuan, ganti dulu atau konversi aman:
+            df[col] = (
+                df[col]
+                .str.replace('.', '', regex=False)  # Hapus titik pemisah ribuan jika ada
+                .str.replace(',', '.', regex=False)  # Ubah koma jadi titik desimal jika ada
             )
             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
     return df
@@ -43,8 +51,7 @@ def load_all_data():
     url_seg_air = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=1692042397&single=true&output=csv"
     url_seg_pbb = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=349029387&single=true&output=csv"
     
-    # URL GID untuk Piutang PBB & Segmentasi Piutang PBB 
-    # (Silakan sesuaikan nilai gid=... jika GID di Google Sheets-mu berbeda)
+    # URL GID untuk Piutang PBB & Segmentasi Piutang PBB yang sudah diupdate
     url_piutang_pbb = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=1078894258&single=true&output=csv"
     url_seg_piutang_pbb = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=658954115&single=true&output=csv"
 
