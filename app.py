@@ -24,33 +24,31 @@ with col_btn1:
         st.cache_data.clear()
         st.rerun()
 
-def clean_numeric_columns(df, cols, is_segmentasi=False):
+def clean_numeric_nominal(df, cols):
+    # Khusus untuk data nominal (Air Tanah, PBB, Piutang PBB)
     for col in cols:
         if col in df.columns:
             df[col] = (
                 df[col].astype(str)
-                .str.strip()
                 .str.replace('Rp', '', regex=False)
-                .str.replace('s.d.', '', regex=False)
+                .str.replace('.', '', regex=False)
+                .str.replace(',', '.', regex=False)
             )
-            def parse_val(val):
-                try:
-                    val_str = str(val).strip()
-                    if not val_str or val_str.lower() == 'nan':
-                        return 0.0
-                    
-                    if is_segmentasi:
-                        # Untuk data segmentasi (jumlah WP/NOP), ambil angka murni tanpa rekayasa ribuan
-                        val_str = val_str.replace('.', '').replace(',', '.')
-                        return float(val_str)
-                    else:
-                        # Untuk data nominal penerimaan
-                        val_str = val_str.replace('.', '').replace(',', '.')
-                        return float(val_str)
-                except:
-                    return 0.0
+            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+    return df
 
-            df[col] = df[col].apply(parse_val)
+def clean_numeric_segmentasi(df, cols):
+    # Khusus untuk data segmentasi (Jumlah WP / NOP), baca angka persis seperti di spreadsheet tanpa utak-atik titik/koma
+    for col in cols:
+        if col in df.columns:
+            df[col] = (
+                df[col].astype(str)
+                .str.replace('WP/NOP', '', regex=False)
+                .str.replace('WP', '', regex=False)
+                .str.replace('NOP', '', regex=False)
+                .str.strip()
+            )
+            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
     return df
 
 @st.cache_data(ttl=300)
@@ -67,7 +65,10 @@ def load_all_data():
     def process_df(url, bulan_str, is_seg=False):
         try:
             df = pd.read_csv(url)
-            df = clean_numeric_columns(df, ['Agustus_2026', 'September_2026'], is_segmentasi=is_seg)
+            if is_seg:
+                df = clean_numeric_segmentasi(df, ['Agustus_2026', 'September_2026'])
+            else:
+                df = clean_numeric_nominal(df, ['Agustus_2026', 'September_2026'])
             
             if 'Tanggal' in df.columns:
                 dt_parsed = pd.to_datetime(df['Tanggal'].astype(str) + '-' + bulan_str + '-2026', format='%d-%m-%Y', errors='coerce')
@@ -80,7 +81,7 @@ def load_all_data():
 
     try:
         df_rekap = pd.read_csv(url_rekap)
-        df_rekap = clean_numeric_columns(df_rekap, ['Agustus_2026', 'September_2026'], is_segmentasi=False)
+        df_rekap = clean_numeric_nominal(df_rekap, ['Agustus_2026', 'September_2026'])
     except:
         df_rekap = pd.DataFrame({
             'Jenis Pajak': ['Pajak Air Tanah', 'PBB'],
