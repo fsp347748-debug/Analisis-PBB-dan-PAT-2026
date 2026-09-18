@@ -117,26 +117,41 @@ st.write("")
 st.write("#### 🔍 Rincian Total Penerimaan per Jenis Pajak")
 col_rp1, col_rp2, col_rp3 = st.columns(3)
 
-# 1. Pajak Air Tanah dari Rekap / df_air
+# 1. Pajak Air Tanah
 tot_air_ag = df_air['Agustus_2026'].sum() if not df_air.empty else 0
 tot_air_sep = df_air['September_2026'].sum() if not df_air.empty else 0
 diff_air = tot_air_sep - tot_air_ag
 pct_air = (diff_air / tot_air_ag * 100) if tot_air_ag > 0 else 0
-col_rp1.metric("💧 Pajak Air Tanah", f"Sep: Rp {tot_air_sep:,.0f}".replace(',', '.'), f"{pct_air:+.1f}% (Agus: Rp {tot_air_ag:,.0f})".replace(',', '.'))
+sign_air = "+" if diff_air >= 0 else ""
+col_rp1.metric(
+    "💧 Pajak Air Tanah", 
+    f"Sep: Rp {tot_air_sep:,.0f}".replace(',', '.'), 
+    f"{sign_air}Rp {diff_air:,.0f} ({pct_air:+.1f}%) | Agus: Rp {tot_air_ag:,.0f}".replace(',', '.')
+)
 
-# 2. PBB dari df_pbb
+# 2. PBB
 tot_pbb_ag = df_pbb['Agustus_2026'].sum() if not df_pbb.empty else 0
 tot_pbb_sep = df_pbb['September_2026'].sum() if not df_pbb.empty else 0
 diff_pbb = tot_pbb_sep - tot_pbb_ag
 pct_pbb = (diff_pbb / tot_pbb_ag * 100) if tot_pbb_ag > 0 else 0
-col_rp2.metric("🏡 Pajak PBB", f"Sep: Rp {tot_pbb_sep:,.0f}".replace(',', '.'), f"{pct_pbb:+.1f}% (Agus: Rp {tot_pbb_ag:,.0f})".replace(',', '.'))
+sign_pbb = "+" if diff_pbb >= 0 else ""
+col_rp2.metric(
+    "🏡 Pajak PBB", 
+    f"Sep: Rp {tot_pbb_sep:,.0f}".replace(',', '.'), 
+    f"{sign_pbb}Rp {diff_pbb:,.0f} ({pct_pbb:+.1f}%) | Agus: Rp {tot_pbb_ag:,.0f}".replace(',', '.')
+)
 
-# 3. Piutang PBB dari df_piutang_pbb
+# 3. Piutang PBB
 tot_piut_ag = df_piutang_pbb['Agustus_2026'].sum() if not df_piutang_pbb.empty else 0
 tot_piut_sep = df_piutang_pbb['September_2026'].sum() if not df_piutang_pbb.empty else 0
 diff_piut = tot_piut_sep - tot_piut_ag
 pct_piut = (diff_piut / tot_piut_ag * 100) if tot_piut_ag > 0 else 0
-col_rp3.metric("🏷️ Piutang PBB", f"Sep: Rp {tot_piut_sep:,.0f}".replace(',', '.'), f"{pct_piut:+.1f}% (Agus: Rp {tot_piut_ag:,.0f})".replace(',', '.'))
+sign_piut = "+" if diff_piut >= 0 else ""
+col_rp3.metric(
+    "🏷️ Piutang PBB", 
+    f"Sep: Rp {tot_piut_sep:,.0f}".replace(',', '.'), 
+    f"{sign_piut}Rp {diff_piut:,.0f} ({pct_piut:+.1f}%) | Agus: Rp {tot_piut_ag:,.0f}".replace(',', '.')
+)
 
 st.write("---")
 
