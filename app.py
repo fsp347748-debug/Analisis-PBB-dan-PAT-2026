@@ -99,7 +99,7 @@ def load_all_data():
 df_rekap, df_air, df_pbb, df_seg_air, df_seg_pbb, df_piutang_pbb, df_seg_piutang_pbb = load_all_data()
 
 # ==========================================
-# 1. KARTU KINERJA UTAMA (KPI) REKAP TOTAL
+# 1. KARTU KINERJA UTAMA (KPI) REKAP TOTAL & PER JENIS PAJAK
 # ==========================================
 total_agus = df_rekap['Agustus_2026'].sum()
 total_sept = df_rekap['September_2026'].sum()
@@ -111,6 +111,33 @@ col_kpi1, col_kpi2, col_kpi3 = st.columns(3)
 col_kpi1.metric("🎀 Total Agustus (Tanpa Insentif)", f"Rp {total_agus:,.0f}".replace(',', '.'))
 col_kpi2.metric("👑 Total September (Dengan Insentif)", f"Rp {total_sept:,.0f}".replace(',', '.'), f"{persen_tumbuh:+.1f}% dari Agustus")
 col_kpi3.metric("⚖️ Selisih Pertumbuhan Absolut", f"Rp {selisih_total:,.0f}".replace(',', '.'))
+
+# Tambahan: Rekap Detail Per Jenis Pajak (Air Tanah, PBB, Piutang PBB)
+st.write("")
+st.write("#### 🔍 Rincian Total Penerimaan per Jenis Pajak")
+col_rp1, col_rp2, col_rp3 = st.columns(3)
+
+# 1. Pajak Air Tanah dari Rekap / df_air
+tot_air_ag = df_air['Agustus_2026'].sum() if not df_air.empty else 0
+tot_air_sep = df_air['September_2026'].sum() if not df_air.empty else 0
+diff_air = tot_air_sep - tot_air_ag
+pct_air = (diff_air / tot_air_ag * 100) if tot_air_ag > 0 else 0
+col_rp1.metric("💧 Pajak Air Tanah", f"Sep: Rp {tot_air_sep:,.0f}".replace(',', '.'), f"{pct_air:+.1f}% (Agus: Rp {tot_air_ag:,.0f})".replace(',', '.'))
+
+# 2. PBB dari df_pbb
+tot_pbb_ag = df_pbb['Agustus_2026'].sum() if not df_pbb.empty else 0
+tot_pbb_sep = df_pbb['September_2026'].sum() if not df_pbb.empty else 0
+diff_pbb = tot_pbb_sep - tot_pbb_ag
+pct_pbb = (diff_pbb / tot_pbb_ag * 100) if tot_pbb_ag > 0 else 0
+col_rp2.metric("🏡 Pajak PBB", f"Sep: Rp {tot_pbb_sep:,.0f}".replace(',', '.'), f"{pct_pbb:+.1f}% (Agus: Rp {tot_pbb_ag:,.0f})".replace(',', '.'))
+
+# 3. Piutang PBB dari df_piutang_pbb
+tot_piut_ag = df_piutang_pbb['Agustus_2026'].sum() if not df_piutang_pbb.empty else 0
+tot_piut_sep = df_piutang_pbb['September_2026'].sum() if not df_piutang_pbb.empty else 0
+diff_piut = tot_piut_sep - tot_piut_ag
+pct_piut = (diff_piut / tot_piut_ag * 100) if tot_piut_ag > 0 else 0
+col_rp3.metric("🏷️ Piutang PBB", f"Sep: Rp {tot_piut_sep:,.0f}".replace(',', '.'), f"{pct_piut:+.1f}% (Agus: Rp {tot_piut_ag:,.0f})".replace(',', '.'))
+
 st.write("---")
 
 # ==========================================
