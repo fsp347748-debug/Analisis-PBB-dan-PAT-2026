@@ -25,7 +25,6 @@ with col_btn1:
         st.rerun()
 
 def clean_numeric_nominal(df, cols):
-    # Khusus untuk data nominal (Air Tanah, PBB, Piutang PBB)
     for col in cols:
         if col in df.columns:
             df[col] = (
@@ -38,7 +37,7 @@ def clean_numeric_nominal(df, cols):
     return df
 
 def clean_numeric_segmentasi(df, cols):
-    # Khusus untuk data segmentasi (Jumlah WP / NOP), baca angka persis seperti di spreadsheet tanpa utak-atik titik/koma
+    # Membaca angka persis apa adanya dari spreadsheet (mendukung satuan maupun ribuan murni)
     for col in cols:
         if col in df.columns:
             df[col] = (
@@ -46,6 +45,8 @@ def clean_numeric_segmentasi(df, cols):
                 .str.replace('WP/NOP', '', regex=False)
                 .str.replace('WP', '', regex=False)
                 .str.replace('NOP', '', regex=False)
+                .str.replace('.', '', regex=False)  # Hapus titik pemisah ribuan jika ada
+                .str.replace(',', '', regex=False)  # Hapus koma pemisah ribuan jika ada
                 .str.strip()
             )
             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
@@ -436,7 +437,7 @@ with tab2:
             hovertemplate="<b>%{x}</b><br>Akumulasi WP Piutang: %{y:,.0f} WP<extra></extra>",
             line=dict(color='#D8BFD8', width=4, shape='spline')
         ))
-        fig_seg_cum_piutang.add_trace(go.Scatter(
+        fig_seg_piutang_weekly.add_trace(go.Scatter(
             x=df_seg_piutang_weekly['Week_Label'], y=df_seg_piutang_weekly['September_Cum'], 
             mode='lines+markers', name='Akumulasi WP Piutang September',
             hovertemplate="<b>%{x}</b><br>Akumulasi WP Piutang: %{y:,.0f} WP<extra></extra>",
