@@ -24,7 +24,7 @@ with col_btn1:
         st.cache_data.clear()
         st.rerun()
 
-def clean_numeric_nominal(df, cols):
+def clean_nominal(df, cols):
     for col in cols:
         if col in df.columns:
             df[col] = (
@@ -36,8 +36,8 @@ def clean_numeric_nominal(df, cols):
             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
     return df
 
-def clean_numeric_segmentasi(df, cols):
-    # Membaca angka persis apa adanya dari spreadsheet (mendukung satuan maupun ribuan murni)
+def clean_segmentasi(df, cols):
+    # Membaca angka mentah secara langsung tanpa menghapus titik/koma yang ada di sheet
     for col in cols:
         if col in df.columns:
             df[col] = (
@@ -45,8 +45,6 @@ def clean_numeric_segmentasi(df, cols):
                 .str.replace('WP/NOP', '', regex=False)
                 .str.replace('WP', '', regex=False)
                 .str.replace('NOP', '', regex=False)
-                .str.replace('.', '', regex=False)  # Hapus titik pemisah ribuan jika ada
-                .str.replace(',', '', regex=False)  # Hapus koma pemisah ribuan jika ada
                 .str.strip()
             )
             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
@@ -67,9 +65,9 @@ def load_all_data():
         try:
             df = pd.read_csv(url)
             if is_seg:
-                df = clean_numeric_segmentasi(df, ['Agustus_2026', 'September_2026'])
+                df = clean_segmentasi(df, ['Agustus_2026', 'September_2026'])
             else:
-                df = clean_numeric_nominal(df, ['Agustus_2026', 'September_2026'])
+                df = clean_nominal(df, ['Agustus_2026', 'September_2026'])
             
             if 'Tanggal' in df.columns:
                 dt_parsed = pd.to_datetime(df['Tanggal'].astype(str) + '-' + bulan_str + '-2026', format='%d-%m-%Y', errors='coerce')
@@ -82,7 +80,7 @@ def load_all_data():
 
     try:
         df_rekap = pd.read_csv(url_rekap)
-        df_rekap = clean_numeric_nominal(df_rekap, ['Agustus_2026', 'September_2026'])
+        df_rekap = clean_nominal(df_rekap, ['Agustus_2026', 'September_2026'])
     except:
         df_rekap = pd.DataFrame({
             'Jenis Pajak': ['Pajak Air Tanah', 'PBB'],
