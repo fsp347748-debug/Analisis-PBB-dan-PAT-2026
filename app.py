@@ -37,7 +37,6 @@ def clean_nominal(df, cols):
     return df
 
 def clean_segmentasi(df, cols):
-    # Membaca angka mentah secara langsung tanpa menghapus titik/koma yang ada di sheet
     for col in cols:
         if col in df.columns:
             df[col] = (
@@ -435,7 +434,7 @@ with tab2:
             hovertemplate="<b>%{x}</b><br>Akumulasi WP Piutang: %{y:,.0f} WP<extra></extra>",
             line=dict(color='#D8BFD8', width=4, shape='spline')
         ))
-        fig_seg_piutang_weekly.add_trace(go.Scatter(
+        fig_seg_cum_piutang.add_trace(go.Scatter(
             x=df_seg_piutang_weekly['Week_Label'], y=df_seg_piutang_weekly['September_Cum'], 
             mode='lines+markers', name='Akumulasi WP Piutang September',
             hovertemplate="<b>%{x}</b><br>Akumulasi WP Piutang: %{y:,.0f} WP<extra></extra>",
