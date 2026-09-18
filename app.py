@@ -42,6 +42,9 @@ def load_all_data():
     url_pbb = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=1312799199&single=true&output=csv"
     url_seg_air = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=1692042397&single=true&output=csv"
     url_seg_pbb = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=349029387&single=true&output=csv"
+    
+    # URL GID baru untuk Segmentasi PBB Piutang (sesuaikan jika GID spreadsheet-mu berbeda)
+    url_piutang_pbb = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=0&single=true&output=csv" # Ganti GID jika ada GID khusus piutang
 
     def process_daily_df(url, bulan_str):
         try:
@@ -71,13 +74,14 @@ def load_all_data():
     df_pbb = process_daily_df(url_pbb, '08')
     df_seg_air = process_daily_df(url_seg_air, '08')
     df_seg_pbb = process_daily_df(url_seg_pbb, '08')
+    df_piutang_pbb = process_daily_df(url_piutang_pbb, '08')
         
-    return df_rekap, df_air, df_pbb, df_seg_air, df_seg_pbb
+    return df_rekap, df_air, df_pbb, df_seg_air, df_seg_pbb, df_piutang_pbb
 
-df_rekap, df_air, df_pbb, df_seg_air, df_seg_pbb = load_all_data()
+df_rekap, df_air, df_pbb, df_seg_air, df_seg_pbb, df_piutang_pbb = load_all_data()
 
 # ==========================================
-# 1. KARTU KINERJA UTAMA (KPI)
+# 1. KARTU KINERJA UTAMA (KPI) REKAP TOTAL
 # ==========================================
 total_agus = df_rekap['Agustus_2026'].sum()
 total_sept = df_rekap['September_2026'].sum()
@@ -89,27 +93,6 @@ col_kpi1, col_kpi2, col_kpi3 = st.columns(3)
 col_kpi1.metric("🎀 Total Agustus (Tanpa Insentif)", f"Rp {total_agus:,.0f}".replace(',', '.'))
 col_kpi2.metric("👑 Total September (Dengan Insentif)", f"Rp {total_sept:,.0f}".replace(',', '.'), f"{persen_tumbuh:+.1f}% dari Agustus")
 col_kpi3.metric("⚖️ Selisih Pertumbuhan Absolut", f"Rp {selisih_total:,.0f}".replace(',', '.'))
-
-# ==========================================
-# 1.5 ANALISIS APPLE-TO-APPLE (HARI KERJA DINAMIS)
-# ==========================================
-st.subheader("🏛️ Analisis Apple-to-Apple: Normalisasi Hari Kerja")
-hari_kerja_agus = 21 
-
-if not df_air.empty and 'DateTime_Sort' in df_air.columns:
-    valid_sept_days = df_air[df_air['September_2026'] > 0]['DateTime_Sort'].dropna()
-    hari_kerja_sept = valid_sept_days.nunique() if not valid_sept_days.empty else 1
-else:
-    hari_kerja_sept = 1
-
-avg_workday_agus = total_agus / hari_kerja_agus
-avg_workday_sept = total_sept / hari_kerja_sept if hari_kerja_sept > 0 else 0
-growth_workday = ((avg_workday_sept - avg_workday_agus) / avg_workday_agus * 100) if avg_workday_agus > 0 else 0
-
-col_w1, col_w2, col_w3 = st.columns(3)
-col_w1.metric("📅 Rata-rata/Hari Kerja Agustus", f"Rp {avg_workday_agus:,.0f}".replace(',', '.'))
-col_w2.metric(f"📅 Rata-rata/Hari Kerja September (s/d {hari_kerja_sept} hari terinput)", f"Rp {avg_workday_sept:,.0f}".replace(',', '.'), f"{growth_workday:+.1f}% per Hari Kerja")
-col_w3.metric("💡 Indikator Perbandingan", "Apple-to-Apple (Normalisasi Workday)")
 st.write("---")
 
 # ==========================================
@@ -171,13 +154,32 @@ st.plotly_chart(fig, use_container_width=True)
 st.write("---")
 
 # ==========================================
-# 3. BAGIAN BAWAH: ANALISIS HARIAN & KURVA KUMULATIF MINGGUAN
+# 3. BAGIAN BAWAH: ANALISIS HARIAN & KUMULATIF MINGGUAN (DIPISAH PER TAB)
 # ==========================================
-st.subheader("📋 Rincian Harian, Kurva Kumulatif Mingguan & Segmentasi Wajib Pajak")
+st.subheader("📋 Rincian Harian, Kurva Kumulatif Mingguan & Analisis Apple-to-Apple")
 
 tab1, tab2 = st.tabs(["💧 Pajak Air Tanah", "🏡 PBB"])
 
+hari_kerja_agus = 21 
+
 with tab1:
+    total_air_agus = df_rekap.loc[df_rekap['Jenis Pajak'].str.contains('Air', case=False, na=False), 'Agustus_2026'].values[0] if not df_rekap.empty else 0
+    total_air_sept = df_rekap.loc[df_rekap['Jenis Pajak'].str.contains('Air', case=False, na=False), 'September_2026'].values[0] if not df_rekap.empty else 0
+    
+    valid_sept_days_air = df_air[df_air['September_2026'] > 0]['DateTime_Sort'].dropna() if not df_air.empty else pd.Series()
+    hari_kerja_sept_air = valid_sept_days_air.nunique() if not valid_sept_days_air.empty else 1
+
+    avg_workday_agus_air = total_air_agus / hari_kerja_agus
+    avg_workday_sept_air = total_air_sept / hari_kerja_sept_air if hari_kerja_sept_air > 0 else 0
+    growth_workday_air = ((avg_workday_sept_air - avg_workday_agus_air) / avg_workday_agus_air * 100) if avg_workday_agus_air > 0 else 0
+
+    st.write("#### 🏛️ Analisis Apple-to-Apple (Normalisasi Hari Kerja - Air Tanah)")
+    col_wa1, col_wa2, col_wa3 = st.columns(3)
+    col_wa1.metric("📅 Rata-rata/Hari Agustus (Air)", f"Rp {avg_workday_agus_air:,.0f}".replace(',', '.'))
+    col_wa2.metric(f"📅 Rata-rata/Hari September (s/d {hari_kerja_sept_air} hari)", f"Rp {avg_workday_sept_air:,.0f}".replace(',', '.'), f"{growth_workday_air:+.1f}% per Hari")
+    col_wa3.metric("💡 Status Air Tanah", "Normalisasi Sesuai Data Masuk")
+    st.write("")
+
     st.write("#### 📈 Kurva Kumulatif Berbasis Pekan (Weekly Cumulative - Air Tanah)")
     if not df_air.empty and 'Week_Num' in df_air.columns:
         df_air_weekly = df_air.groupby('Week_Num')[['Agustus_2026', 'September_2026']].sum().reset_index()
@@ -226,7 +228,6 @@ with tab1:
         df_seg_air_weekly['Week_Label'] = "Week " + df_seg_air_weekly['Week_Num'].astype(str)
 
         fig_seg_cum_air = go.Figure()
-        # Mengubah grafik WP menjadi kurva garis melengkung (spline) menyerupai gambar referensi
         fig_seg_cum_air.add_trace(go.Scatter(
             x=df_seg_air_weekly['Week_Label'], y=df_seg_air_weekly['Agustus_Cum'], 
             mode='lines+markers', name='Akumulasi WP Agustus',
@@ -241,7 +242,7 @@ with tab1:
         ))
         fig_seg_cum_air.update_layout(
             paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.5)',
-            title=dict(text="Kurva Akumulasi Mingguan Jumlah Wajib Pajak (Air Tanah)", font=dict(size=16, color='#C71585')),
+            title=dict(text="Kurva Kumulatif Jumlah Wajib Pajak Mingguan (Air Tanah)", font=dict(size=16, color='#C71585')),
             xaxis=dict(title='Periode Pekan (Weekly)', type='category', tickfont=dict(color='#C71585')),
             yaxis=dict(title='Kumulatif Jumlah WP', tickfont=dict(color='#C71585')),
             legend=dict(bgcolor='#FFF0F5', bordercolor='#FF1493', borderwidth=1),
@@ -258,6 +259,23 @@ with tab1:
         st.info("Belum ada data segmentasi WP Air Tanah.")
 
 with tab2:
+    total_pbb_agus = df_rekap.loc[df_rekap['Jenis Pajak'].str.contains('PBB', case=False, na=False), 'Agustus_2026'].values[0] if not df_rekap.empty else 0
+    total_pbb_sept = df_rekap.loc[df_rekap['Jenis Pajak'].str.contains('PBB', case=False, na=False), 'September_2026'].values[0] if not df_rekap.empty else 0
+    
+    valid_sept_days_pbb = df_pbb[df_pbb['September_2026'] > 0]['DateTime_Sort'].dropna() if not df_pbb.empty else pd.Series()
+    hari_kerja_sept_pbb = valid_sept_days_pbb.nunique() if not valid_sept_days_pbb.empty else 1
+
+    avg_workday_agus_pbb = total_pbb_agus / hari_kerja_agus
+    avg_workday_sept_pbb = total_pbb_sept / hari_kerja_sept_pbb if hari_kerja_sept_pbb > 0 else 0
+    growth_workday_pbb = ((avg_workday_sept_pbb - avg_workday_agus_pbb) / avg_workday_agus_pbb * 100) if avg_workday_agus_pbb > 0 else 0
+
+    st.write("#### 🏛️ Analisis Apple-to-Apple (Normalisasi Hari Kerja - PBB)")
+    col_wp1, col_wp2, col_wp3 = st.columns(3)
+    col_wp1.metric("📅 Rata-rata/Hari Agustus (PBB)", f"Rp {avg_workday_agus_pbb:,.0f}".replace(',', '.'))
+    col_wp2.metric(f"📅 Rata-rata/Hari September (s/d {hari_kerja_sept_pbb} hari)", f"Rp {avg_workday_sept_pbb:,.0f}".replace(',', '.'), f"{growth_workday_pbb:+.1f}% per Hari")
+    col_wp3.metric("💡 Status PBB", "Normalisasi Sesuai Data Masuk")
+    st.write("")
+
     st.write("#### 📈 Kurva Kumulatif Berbasis Pekan (Weekly Cumulative - PBB)")
     if not df_pbb.empty and 'Week_Num' in df_pbb.columns:
         df_pbb_weekly = df_pbb.groupby('Week_Num')[['Agustus_2026', 'September_2026']].sum().reset_index()
@@ -306,7 +324,6 @@ with tab2:
         df_seg_pbb_weekly['Week_Label'] = "Week " + df_seg_pbb_weekly['Week_Num'].astype(str)
 
         fig_seg_cum_pbb = go.Figure()
-        # Mengubah grafik NOP PBB menjadi kurva garis melengkung (spline) persis seperti contoh gambar
         fig_seg_cum_pbb.add_trace(go.Scatter(
             x=df_seg_pbb_weekly['Week_Label'], y=df_seg_pbb_weekly['Agustus_Cum'], 
             mode='lines+markers', name='Akumulasi NOP Agustus',
@@ -336,3 +353,50 @@ with tab2:
         }), use_container_width=True)
     else:
         st.info("Belum ada data segmentasi NOP PBB.")
+
+    # ==========================================
+    # 4. TAMBAHAN: KURVA PERBANDINGAN / SCATTER PIUTANG PBB (AGUSTUS vs SEPTEMBER)
+    # ==========================================
+    st.write("---")
+    st.write("#### 🏷️ Analisis Perbandingan Segmentasi PBB Piutang (Agustus vs September)")
+    
+    if not df_piutang_pbb.empty:
+        fig_piutang = go.Figure()
+        
+        # Garis/Scatter Bayangan atau Potensi (Agustus)
+        fig_piutang.add_trace(go.Scatter(
+            x=df_piutang_pbb.index, y=df_piutang_pbb.get('Agustus_2026', []),
+            mode='lines+markers', name='Agustus 2026 (Piutang PBB)',
+            line=dict(shape='spline', color='#D8BFD8', width=3, dash='dash'),
+            marker=dict(size=8, color='#D8BFD8'),
+            hovertemplate="<b>Agustus:</b> Rp %{y:,.2f}<extra></extra>"
+        ))
+
+        # Garis Utama (September) dengan fill warna ungu lembut di bawahnya
+        fig_piutang.add_trace(go.Scatter(
+            x=df_piutang_pbb.index, y=df_piutang_pbb.get('September_2026', []),
+            mode='lines+markers', name='September 2026 (Piutang PBB)',
+            fill='tozeroy',
+            fillcolor='rgba(147, 112, 219, 0.15)',
+            line=dict(shape='spline', color='#9370DB', width=4),
+            marker=dict(size=9, color='#9370DB'),
+            hovertemplate="<b>September:</b> Rp %{y:,.2f}<extra></extra>"
+        ))
+
+        fig_piutang.update_layout(
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(255,255,255,0.9)',
+            height=450,
+            title=dict(text="<b>Kurva Perbandingan Segmentasi PBB Piutang (Agustus vs September)</b>", font=dict(size=15, color='#800080', family="Georgia")),
+            xaxis=dict(title='<b>Kategori / Urutan Segmentasi Piutang</b>', showgrid=True, gridcolor='rgba(230, 230, 230, 0.6)'),
+            yaxis=dict(title='<b>Nilai Piutang (Rp)</b>', showgrid=True, gridcolor='rgba(230, 230, 230, 0.6)', tickformat=',.0f'),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, bgcolor='rgba(255,255,255,0.9)'),
+            hovermode="x unified"
+        )
+        st.plotly_chart(fig_piutang, use_container_width=True)
+
+        st.dataframe(df_piutang_pbb.style.format({
+            col: 'Rp {:,.2f}' for col in df_piutang_pbb.columns if col not in ['Tanggal', 'Week_Num'] and pd.api.types.is_numeric_dtype(df_piutang_pbb[col])
+        }, na_rep='-'), use_container_width=True)
+    else:
+        st.info("Data Segmentasi PBB Piutang belum tersedia atau format kolom perlu disesuaikan.")
