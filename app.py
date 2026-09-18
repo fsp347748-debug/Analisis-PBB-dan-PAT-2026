@@ -24,7 +24,7 @@ with col_btn1:
         st.cache_data.clear()
         st.rerun()
 
-def clean_numeric_columns(df, cols):
+def clean_numeric_columns(df, cols, is_segmentasi=False):
     for col in cols:
         if col in df.columns:
             df[col] = (
@@ -33,11 +33,20 @@ def clean_numeric_columns(df, cols):
                 .str.replace('Rp', '', regex=False)
                 .str.replace('s.d.', '', regex=False)
             )
-            # Pembersih angka yang aman untuk format ribuan/desimal agar tidak salah baca
             def parse_val(val):
                 try:
-                    val_str = str(val).replace('.', '').replace(',', '.')
-                    return float(val_str)
+                    val_str = str(val).strip()
+                    if not val_str or val_str.lower() == 'nan':
+                        return 0.0
+                    
+                    if is_segmentasi:
+                        # Untuk data segmentasi (jumlah WP/NOP), ambil angka murni tanpa rekayasa ribuan
+                        val_str = val_str.replace('.', '').replace(',', '.')
+                        return float(val_str)
+                    else:
+                        # Untuk data nominal penerimaan
+                        val_str = val_str.replace('.', '').replace(',', '.')
+                        return float(val_str)
                 except:
                     return 0.0
 
@@ -55,10 +64,10 @@ def load_all_data():
     url_piutang_pbb = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=1078894258&single=true&output=csv"
     url_seg_piutang_pbb = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4f0nx-O0qpFrfhCAG4Si4QdZMVEzE0ne1FIKgKN-LBs9O80vAQ1ZLZ0KrTOWPX8GXk7LK6H-t2Ed/pub?gid=658954115&single=true&output=csv"
 
-    def process_daily_df(url, bulan_str):
+    def process_df(url, bulan_str, is_seg=False):
         try:
             df = pd.read_csv(url)
-            df = clean_numeric_columns(df, ['Agustus_2026', 'September_2026'])
+            df = clean_numeric_columns(df, ['Agustus_2026', 'September_2026'], is_segmentasi=is_seg)
             
             if 'Tanggal' in df.columns:
                 dt_parsed = pd.to_datetime(df['Tanggal'].astype(str) + '-' + bulan_str + '-2026', format='%d-%m-%Y', errors='coerce')
@@ -71,7 +80,7 @@ def load_all_data():
 
     try:
         df_rekap = pd.read_csv(url_rekap)
-        df_rekap = clean_numeric_columns(df_rekap, ['Agustus_2026', 'September_2026'])
+        df_rekap = clean_numeric_columns(df_rekap, ['Agustus_2026', 'September_2026'], is_segmentasi=False)
     except:
         df_rekap = pd.DataFrame({
             'Jenis Pajak': ['Pajak Air Tanah', 'PBB'],
@@ -79,12 +88,12 @@ def load_all_data():
             'September_2026': [835178310, 198040000]
         })
         
-    df_air = process_daily_df(url_air, '08')
-    df_pbb = process_daily_df(url_pbb, '08')
-    df_seg_air = process_daily_df(url_seg_air, '08')
-    df_seg_pbb = process_daily_df(url_seg_pbb, '08')
-    df_piutang_pbb = process_daily_df(url_piutang_pbb, '08')
-    df_seg_piutang_pbb = process_daily_df(url_seg_piutang_pbb, '08')
+    df_air = process_df(url_air, '08', is_seg=False)
+    df_pbb = process_df(url_pbb, '08', is_seg=False)
+    df_seg_air = process_df(url_seg_air, '08', is_seg=True)
+    df_seg_pbb = process_df(url_seg_pbb, '08', is_seg=True)
+    df_piutang_pbb = process_df(url_piutang_pbb, '08', is_seg=False)
+    df_seg_piutang_pbb = process_df(url_seg_piutang_pbb, '08', is_seg=True)
         
     return df_rekap, df_air, df_pbb, df_seg_air, df_seg_pbb, df_piutang_pbb, df_seg_piutang_pbb
 
