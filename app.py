@@ -9,7 +9,14 @@ st.markdown("""
     <style>
     .stApp { background-color: #FFF0F5; }
     h1, h2, h3, p, div { color: #C71585 !important; font-family: 'Georgia', serif; }
-    .stButton>button { background-color: #FFB6C1; color: #C71585; border-radius: 10px; border: 1px solid #FF1493; font-weight: bold; }
+    .stButton>button { background-color: #FFB6C1; color: #C71585; border-radius: 10px; border: 1px solid #FF1493; font-weight: bold; width: 100%; }
+    
+    /* Agar responsif di HP */
+    @media (max-width: 768px) {
+        h1 { font-size: 24px !important; }
+        h2 { font-size: 20px !important; }
+        h3 { font-size: 16px !important; }
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -112,7 +119,7 @@ col_kpi1.metric("🎀 Total Agustus (Tanpa Insentif)", f"Rp {total_agus:,.0f}".r
 col_kpi2.metric("👑 Total September (Dengan Insentif)", f"Rp {total_sept:,.0f}".replace(',', '.'), f"{persen_tumbuh:+.1f}% dari Agustus")
 col_kpi3.metric("⚖️ Selisih Pertumbuhan Absolut", f"Rp {selisih_total:,.0f}".replace(',', '.'))
 
-# Tambahan: Rekap Detail Per Jenis Pajak (Air Tanah, PBB, Piutang PBB)
+# Tambahan: Rekap Detail Per Jenis Pajak
 st.write("")
 st.write("#### 🔍 Rincian Total Penerimaan per Jenis Pajak")
 col_rp1, col_rp2, col_rp3 = st.columns(3)
@@ -210,7 +217,7 @@ fig.update_layout(
     margin=dict(t=60, b=40)
 )
 
-st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig, use_container_width=True, config={'responsive': True})
 st.write("---")
 
 # ==========================================
@@ -266,9 +273,10 @@ with tab1:
             xaxis=dict(title='Periode Pekan (Weekly)', type='category', tickfont=dict(color='#C71585')),
             yaxis=dict(title='Total Kumulatif (Rp)', tickfont=dict(color='#C71585')),
             legend=dict(bgcolor='#FFF0F5', bordercolor='#FF1493', borderwidth=1),
-            hovermode="x unified"
+            hovermode="x unified",
+            autosize=True
         )
-        st.plotly_chart(fig_cum_air, use_container_width=True)
+        st.plotly_chart(fig_cum_air, use_container_width=True, config={'responsive': True})
 
     st.write("#### 💰 Rincian Nominal Harian Pajak Air Tanah")
     if not df_air.empty:
@@ -306,9 +314,10 @@ with tab1:
             xaxis=dict(title='Periode Pekan (Weekly)', type='category', tickfont=dict(color='#C71585')),
             yaxis=dict(title='Kumulatif Jumlah WP', tickfont=dict(color='#C71585')),
             legend=dict(bgcolor='#FFF0F5', bordercolor='#FF1493', borderwidth=1),
-            hovermode="x unified"
+            hovermode="x unified",
+            autosize=True
         )
-        st.plotly_chart(fig_seg_cum_air, use_container_width=True)
+        st.plotly_chart(fig_seg_cum_air, use_container_width=True, config={'responsive': True})
 
         df_seg_air_tabel = df_seg_air[['Tanggal', 'Agustus_2026', 'September_2026']].copy()
         st.dataframe(df_seg_air_tabel.style.format({
@@ -362,9 +371,10 @@ with tab2:
             xaxis=dict(title='Periode Pekan (Weekly)', type='category', tickfont=dict(color='#800080')),
             yaxis=dict(title='Total Kumulatif (Rp)', tickfont=dict(color='#800080')),
             legend=dict(bgcolor='#FFF0F5', bordercolor='#9370DB', borderwidth=1),
-            hovermode="x unified"
+            hovermode="x unified",
+            autosize=True
         )
-        st.plotly_chart(fig_cum_pbb, use_container_width=True)
+        st.plotly_chart(fig_cum_pbb, use_container_width=True, config={'responsive': True})
 
     st.write("#### 💰 Rincian Nominal Harian PBB")
     if not df_pbb.empty:
@@ -402,9 +412,10 @@ with tab2:
             xaxis=dict(title='Periode Pekan (Weekly)', type='category', tickfont=dict(color='#800080')),
             yaxis=dict(title='Kumulatif Jumlah NOP', tickfont=dict(color='#800080')),
             legend=dict(bgcolor='#FFF0F5', bordercolor='#9370DB', borderwidth=1),
-            hovermode="x unified"
+            hovermode="x unified",
+            autosize=True
         )
-        st.plotly_chart(fig_seg_cum_pbb, use_container_width=True)
+        st.plotly_chart(fig_seg_cum_pbb, use_container_width=True, config={'responsive': True})
 
         df_seg_pbb_tabel = df_seg_pbb[['Tanggal', 'Agustus_2026', 'September_2026']].copy()
         st.dataframe(df_seg_pbb_tabel.style.format({
@@ -447,9 +458,10 @@ with tab2:
             xaxis=dict(title='Periode Pekan (Weekly)', type='category', tickfont=dict(color='#800080')),
             yaxis=dict(title='Total Kumulatif Piutang (Rp)', tickfont=dict(color='#800080')),
             legend=dict(bgcolor='#FFF0F5', bordercolor='#9370DB', borderwidth=1),
-            hovermode="x unified"
+            hovermode="x unified",
+            autosize=True
         )
-        st.plotly_chart(fig_cum_piutang, use_container_width=True)
+        st.plotly_chart(fig_cum_piutang, use_container_width=True, config={'responsive': True})
 
     st.write("#### 💰 Rincian Nominal Harian Piutang PBB")
     if not df_piutang_pbb.empty:
@@ -488,9 +500,10 @@ with tab2:
             xaxis=dict(title='Periode Pekan (Weekly)', type='category', tickfont=dict(color='#800080')),
             yaxis=dict(title='Kumulatif Jumlah WP / NOP', tickfont=dict(color='#800080')),
             legend=dict(bgcolor='#FFF0F5', bordercolor='#9370DB', borderwidth=1),
-            hovermode="x unified"
+            hovermode="x unified",
+            autosize=True
         )
-        st.plotly_chart(fig_seg_cum_piutang, use_container_width=True)
+        st.plotly_chart(fig_seg_cum_piutang, use_container_width=True, config={'responsive': True})
 
         df_seg_piutang_tabel = df_seg_piutang_pbb[['Tanggal', 'Agustus_2026', 'September_2026']].copy()
         st.dataframe(df_seg_piutang_tabel.style.format({
