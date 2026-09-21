@@ -2,25 +2,19 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 
-# Konfigurasi Halaman Website Tema Princess
-st.set_page_config(page_title="Dashboard Analisis Insentif Fiskal", page_icon="🎀", layout="wide")
+# Konfigurasi Halaman Website Tema Formal Instansi
+st.set_page_config(page_title="Dashboard Analisis Insentif Fiskal", page_icon="🏛️", layout="wide")
 
 st.markdown("""
     <style>
-    .stApp { background-color: #FFF0F5; }
-    h1, h2, h3, p, div { color: #C71585 !important; font-family: 'Georgia', serif; }
-    .stButton>button { background-color: #FFB6C1; color: #C71585; border-radius: 10px; border: 1px solid #FF1493; font-weight: bold; width: 100%; }
-    
-    /* Agar responsif di HP */
-    @media (max-width: 768px) {
-        h1 { font-size: 24px !important; }
-        h2 { font-size: 20px !important; }
-        h3 { font-size: 16px !important; }
-    }
+    .stApp { background-color: #F8F9FA; }
+    h1, h2, h3, p, div { color: #1E3A8A !important; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    .stButton>button { background-color: #1E3A8A; color: #FFFFFF; border-radius: 6px; border: 1px solid #1E40AF; font-weight: bold; width: 100%; }
+    .stButton>button:hover { background-color: #1E40AF; color: #FFFFFF; }
     </style>
     """, unsafe_allow_html=True)
 
-st.title("🎀 Dashboard Analisis Dampak Insentif Fiskal 👑")
+st.title("🏛️ Dashboard Analisis Dampak Insentif Fiskal 📊")
 st.markdown("✨ **Evaluasi Perbandingan Penerimaan & Kepatuhan Wajib Pajak (Agustus vs September 2026)** ✨")
 st.write("---")
 
@@ -115,8 +109,8 @@ persen_tumbuh = (selisih_total / total_agus * 100) if total_agus > 0 else 0
 
 st.subheader("📈 Ringkasan Eksekutif Dampak Kebijakan")
 col_kpi1, col_kpi2, col_kpi3 = st.columns(3)
-col_kpi1.metric("🎀 Total Agustus (Tanpa Insentif)", f"Rp {total_agus:,.0f}".replace(',', '.'))
-col_kpi2.metric("👑 Total September (Dengan Insentif)", f"Rp {total_sept:,.0f}".replace(',', '.'), f"{persen_tumbuh:+.1f}% dari Agustus")
+col_kpi1.metric("📌 Total Agustus (Tanpa Insentif)", f"Rp {total_agus:,.0f}".replace(',', '.'))
+col_kpi2.metric("📋 Total September (Dengan Insentif)", f"Rp {total_sept:,.0f}".replace(',', '.'), f"{persen_tumbuh:+.1f}% dari Agustus")
 col_kpi3.metric("⚖️ Selisih Pertumbuhan Absolut", f"Rp {selisih_total:,.0f}".replace(',', '.'))
 
 # Tambahan: Rekap Detail Per Jenis Pajak
@@ -172,13 +166,13 @@ x_jenis = df_rekap['Jenis Pajak']
 
 fig.add_trace(go.Bar(
     x=x_jenis, y=df_rekap['Agustus_2026'], name='Agustus 2026 (Tanpa Insentif)',
-    marker_color=['#FFB6C1', '#D8BFD8'], marker_line_color=['#FF1493', '#8A2BE2'], marker_line_width=1.5,
+    marker_color=['#94A3B8', '#64748B'], marker_line_color=['#475569', '#334155'], marker_line_width=1.5,
     hovertemplate="<b>Agustus:</b> Rp %{y:,.0f}<extra></extra>"
 ))
 
 fig.add_trace(go.Bar(
     x=x_jenis, y=df_rekap['September_2026'], name='September 2026 (Berjalan Insentif)',
-    marker_color=['#FF69B4', '#9370DB'], marker_line_color=['#C71585', '#4B0082'], marker_line_width=1.5,
+    marker_color=['#3B82F6', '#1D4ED8'], marker_line_color=['#1E40AF', '#1E3A8A'], marker_line_width=1.5,
     hovertemplate="<b>September:</b> Rp %{y:,.0f}<extra></extra>"
 ))
 
@@ -192,27 +186,27 @@ for index, row in df_rekap.iterrows():
     if sept > 0:
         format_selisih = f"Rp {abs(selisih):,.0f}".replace(',', '.')
         if selisih > 0:
-            selisih_text.append(f"🥳💖 Naik ({p_tumbuh:+.1f}%)\n+{format_selisih}")
+            selisih_text.append(f"📈 Naik ({p_tumbuh:+.1f}%)\n+{format_selisih}")
         elif selisih < 0:
-            selisih_text.append(f"😭☔ Turun ({p_tumbuh:+.1f}%)\n-{format_selisih}")
+            selisih_text.append(f"📉 Turun ({p_tumbuh:+.1f}%)\n-{format_selisih}")
         else:
-            selisih_text.append("😶 Tetap (0%)")
+            selisih_text.append("➖ Tetap (0%)")
     else:
         selisih_text.append("")
 
 max_val = max(df_rekap['Agustus_2026'].max(), df_rekap['September_2026'].max())
 fig.add_trace(go.Scatter(
     x=x_jenis, y=df_rekap['September_2026'] + (max_val * 0.08 if max_val > 0 else 10),
-    text=selisih_text, mode='text', textfont=dict(size=12, color='#C71585'),
+    text=selisih_text, mode='text', textfont=dict(size=12, color='#1E3A8A'),
     showlegend=False, hoverinfo='skip'
 ))
 
 fig.update_layout(
-    barmode='group', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.5)',
-    title=dict(text="Dampak Kebijakan Insentif Fiskal terhadap Pendapatan Daerah", font=dict(size=18, color='#C71585')),
-    xaxis=dict(title='Jenis Pajak', tickfont=dict(color='#C71585'), type='category'),
-    yaxis=dict(title='Jumlah Total (Rp)', tickfont=dict(color='#C71585')),
-    legend=dict(bgcolor='#FFF0F5', bordercolor='#FF1493', borderwidth=1),
+    barmode='group', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.8)',
+    title=dict(text="Dampak Kebijakan Insentif Fiskal terhadap Pendapatan Daerah", font=dict(size=18, color='#1E3A8A')),
+    xaxis=dict(title='Jenis Pajak', tickfont=dict(color='#1E3A8A'), type='category'),
+    yaxis=dict(title='Jumlah Total (Rp)', tickfont=dict(color='#1E3A8A')),
+    legend=dict(bgcolor='#F8F9FA', bordercolor='#CBD5E1', borderwidth=1),
     hovermode="x unified",
     margin=dict(t=60, b=40)
 )
@@ -259,20 +253,20 @@ with tab1:
             x=df_air_weekly['Week_Label'], y=df_air_weekly['Agustus_Cum'], 
             mode='lines+markers', name='Akumulasi Agustus',
             hovertemplate="<b>%{x}</b><br>Akumulasi: Rp %{y:,.0f}<extra></extra>",
-            line=dict(color='#FFB6C1', width=4, shape='linear')
+            line=dict(color='#94A3B8', width=3, shape='linear')
         ))
         fig_cum_air.add_trace(go.Scatter(
             x=df_air_weekly['Week_Label'], y=df_air_weekly['September_Cum'], 
             mode='lines+markers', name='Akumulasi September',
             hovertemplate="<b>%{x}</b><br>Akumulasi: Rp %{y:,.0f}<extra></extra>",
-            line=dict(color='#C71585', width=4, shape='linear')
+            line=dict(color='#3B82F6', width=3, shape='linear')
         ))
         fig_cum_air.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.5)',
-            title=dict(text="Kurva Akumulasi Mingguan (Air Tanah)", font=dict(size=16, color='#C71585')),
-            xaxis=dict(title='Periode Pekan (Weekly)', type='category', tickfont=dict(color='#C71585')),
-            yaxis=dict(title='Total Kumulatif (Rp)', tickfont=dict(color='#C71585')),
-            legend=dict(bgcolor='#FFF0F5', bordercolor='#FF1493', borderwidth=1),
+            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.8)',
+            title=dict(text="Kurva Akumulasi Mingguan (Air Tanah)", font=dict(size=16, color='#1E3A8A')),
+            xaxis=dict(title='Periode Pekan (Weekly)', type='category', tickfont=dict(color='#1E3A8A')),
+            yaxis=dict(title='Total Kumulatif (Rp)', tickfont=dict(color='#1E3A8A')),
+            legend=dict(bgcolor='#F8F9FA', bordercolor='#CBD5E1', borderwidth=1),
             hovermode="x unified",
             autosize=True
         )
@@ -300,20 +294,20 @@ with tab1:
             x=df_seg_air_weekly['Week_Label'], y=df_seg_air_weekly['Agustus_Cum'], 
             mode='lines+markers', name='Akumulasi WP Agustus',
             hovertemplate="<b>%{x}</b><br>Akumulasi WP: %{y:,.0f} WP<extra></extra>",
-            line=dict(color='#FFB6C1', width=4, shape='linear')
+            line=dict(color='#94A3B8', width=3, shape='linear')
         ))
         fig_seg_cum_air.add_trace(go.Scatter(
             x=df_seg_air_weekly['Week_Label'], y=df_seg_air_weekly['September_Cum'], 
             mode='lines+markers', name='Akumulasi WP September',
             hovertemplate="<b>%{x}</b><br>Akumulasi WP: %{y:,.0f} WP<extra></extra>",
-            line=dict(color='#C71585', width=4, shape='linear')
+            line=dict(color='#3B82F6', width=3, shape='linear')
         ))
         fig_seg_cum_air.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.5)',
-            title=dict(text="Kurva Kumulatif Jumlah Wajib Pajak Mingguan (Air Tanah)", font=dict(size=16, color='#C71585')),
-            xaxis=dict(title='Periode Pekan (Weekly)', type='category', tickfont=dict(color='#C71585')),
-            yaxis=dict(title='Kumulatif Jumlah WP', tickfont=dict(color='#C71585')),
-            legend=dict(bgcolor='#FFF0F5', bordercolor='#FF1493', borderwidth=1),
+            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.8)',
+            title=dict(text="Kurva Kumulatif Jumlah Wajib Pajak Mingguan (Air Tanah)", font=dict(size=16, color='#1E3A8A')),
+            xaxis=dict(title='Periode Pekan (Weekly)', type='category', tickfont=dict(color='#1E3A8A')),
+            yaxis=dict(title='Kumulatif Jumlah WP', tickfont=dict(color='#1E3A8A')),
+            legend=dict(bgcolor='#F8F9FA', bordercolor='#CBD5E1', borderwidth=1),
             hovermode="x unified",
             autosize=True
         )
@@ -357,20 +351,20 @@ with tab2:
             x=df_pbb_weekly['Week_Label'], y=df_pbb_weekly['Agustus_Cum'], 
             mode='lines+markers', name='Akumulasi Agustus',
             hovertemplate="<b>%{x}</b><br>Akumulasi: Rp %{y:,.0f}<extra></extra>",
-            line=dict(color='#D8BFD8', width=4, shape='linear')
+            line=dict(color='#94A3B8', width=3, shape='linear')
         ))
         fig_cum_pbb.add_trace(go.Scatter(
             x=df_pbb_weekly['Week_Label'], y=df_pbb_weekly['September_Cum'], 
             mode='lines+markers', name='Akumulasi September',
             hovertemplate="<b>%{x}</b><br>Akumulasi: Rp %{y:,.0f}<extra></extra>",
-            line=dict(color='#9370DB', width=4, shape='linear')
+            line=dict(color='#3B82F6', width=3, shape='linear')
         ))
         fig_cum_pbb.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.5)',
-            title=dict(text="Kurva Akumulasi Mingguan (PBB)", font=dict(size=16, color='#800080')),
-            xaxis=dict(title='Periode Pekan (Weekly)', type='category', tickfont=dict(color='#800080')),
-            yaxis=dict(title='Total Kumulatif (Rp)', tickfont=dict(color='#800080')),
-            legend=dict(bgcolor='#FFF0F5', bordercolor='#9370DB', borderwidth=1),
+            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.8)',
+            title=dict(text="Kurva Akumulasi Mingguan (PBB)", font=dict(size=16, color='#1E3A8A')),
+            xaxis=dict(title='Periode Pekan (Weekly)', type='category', tickfont=dict(color='#1E3A8A')),
+            yaxis=dict(title='Total Kumulatif (Rp)', tickfont=dict(color='#1E3A8A')),
+            legend=dict(bgcolor='#F8F9FA', bordercolor='#CBD5E1', borderwidth=1),
             hovermode="x unified",
             autosize=True
         )
@@ -398,20 +392,20 @@ with tab2:
             x=df_seg_pbb_weekly['Week_Label'], y=df_seg_pbb_weekly['Agustus_Cum'], 
             mode='lines+markers', name='Akumulasi NOP Agustus',
             hovertemplate="<b>%{x}</b><br>Akumulasi NOP: %{y:,.0f} NOP<extra></extra>",
-            line=dict(color='#D8BFD8', width=4, shape='linear')
+            line=dict(color='#94A3B8', width=3, shape='linear')
         ))
         fig_seg_cum_pbb.add_trace(go.Scatter(
             x=df_seg_pbb_weekly['Week_Label'], y=df_seg_pbb_weekly['September_Cum'], 
             mode='lines+markers', name='Akumulasi NOP September',
             hovertemplate="<b>%{x}</b><br>Akumulasi NOP: %{y:,.0f} NOP<extra></extra>",
-            line=dict(color='#9370DB', width=4, shape='linear')
+            line=dict(color='#3B82F6', width=3, shape='linear')
         ))
         fig_seg_cum_pbb.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.5)',
-            title=dict(text="Kurva Kumulatif Jumlah NOP Mingguan (PBB)", font=dict(size=16, color='#800080')),
-            xaxis=dict(title='Periode Pekan (Weekly)', type='category', tickfont=dict(color='#800080')),
-            yaxis=dict(title='Kumulatif Jumlah NOP', tickfont=dict(color='#800080')),
-            legend=dict(bgcolor='#FFF0F5', bordercolor='#9370DB', borderwidth=1),
+            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.8)',
+            title=dict(text="Kurva Kumulatif Jumlah NOP Mingguan (PBB)", font=dict(size=16, color='#1E3A8A')),
+            xaxis=dict(title='Periode Pekan (Weekly)', type='category', tickfont=dict(color='#1E3A8A')),
+            yaxis=dict(title='Kumulatif Jumlah NOP', tickfont=dict(color='#1E3A8A')),
+            legend=dict(bgcolor='#F8F9FA', bordercolor='#CBD5E1', borderwidth=1),
             hovermode="x unified",
             autosize=True
         )
@@ -444,20 +438,20 @@ with tab2:
             x=df_piutang_weekly['Week_Label'], y=df_piutang_weekly['Agustus_Cum'], 
             mode='lines+markers', name='Akumulasi Piutang Agustus',
             hovertemplate="<b>%{x}</b><br>Akumulasi Piutang: Rp %{y:,.0f}<extra></extra>",
-            line=dict(color='#D8BFD8', width=4, shape='linear')
+            line=dict(color='#94A3B8', width=3, shape='linear')
         ))
         fig_cum_piutang.add_trace(go.Scatter(
             x=df_piutang_weekly['Week_Label'], y=df_piutang_weekly['September_Cum'], 
             mode='lines+markers', name='Akumulasi Piutang September',
             hovertemplate="<b>%{x}</b><br>Akumulasi Piutang: Rp %{y:,.0f}<extra></extra>",
-            line=dict(color='#9370DB', width=4, shape='linear')
+            line=dict(color='#3B82F6', width=3, shape='linear')
         ))
         fig_cum_piutang.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.5)',
-            title=dict(text="Kurva Akumulasi Mingguan (Piutang PBB)", font=dict(size=16, color='#800080')),
-            xaxis=dict(title='Periode Pekan (Weekly)', type='category', tickfont=dict(color='#800080')),
-            yaxis=dict(title='Total Kumulatif Piutang (Rp)', tickfont=dict(color='#800080')),
-            legend=dict(bgcolor='#FFF0F5', bordercolor='#9370DB', borderwidth=1),
+            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.8)',
+            title=dict(text="Kurva Akumulasi Mingguan (Piutang PBB)", font=dict(size=16, color='#1E3A8A')),
+            xaxis=dict(title='Periode Pekan (Weekly)', type='category', tickfont=dict(color='#1E3A8A')),
+            yaxis=dict(title='Total Kumulatif Piutang (Rp)', tickfont=dict(color='#1E3A8A')),
+            legend=dict(bgcolor='#F8F9FA', bordercolor='#CBD5E1', borderwidth=1),
             hovermode="x unified",
             autosize=True
         )
@@ -486,20 +480,21 @@ with tab2:
             x=df_seg_piutang_weekly['Week_Label'], y=df_seg_piutang_weekly['Agustus_Cum'], 
             mode='lines+markers', name='Akumulasi WP Piutang Agustus',
             hovertemplate="<b>%{x}</b><br>Akumulasi WP Piutang: %{y:,.0f} WP<extra></extra>",
-            line=dict(color='#D8BFD8', width=4, shape='linear')
+            line=dict(color='#94A3B8', width=3, shape='linear')
         ))
         fig_seg_cum_piutang.add_trace(go.Scatter(
-            x=df_seg_piutang_weekly['Week_Label'], y=df_seg_piutang_weekly['September_Cum'], 
+            x=df_seg_piitang_weekly['Week_Label'] if 'df_seg_piutang_weekly' in locals() else df_seg_piutang_weekly['Week_Label'], 
+            y=df_seg_piutang_weekly['September_Cum'], 
             mode='lines+markers', name='Akumulasi WP Piutang September',
             hovertemplate="<b>%{x}</b><br>Akumulasi WP Piutang: %{y:,.0f} WP<extra></extra>",
-            line=dict(color='#9370DB', width=4, shape='linear')
+            line=dict(color='#3B82F6', width=3, shape='linear')
         ))
         fig_seg_cum_piutang.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.5)',
-            title=dict(text="Kurva Kumulatif Mingguan Jumlah WP Segmentasi Piutang PBB", font=dict(size=16, color='#800080')),
-            xaxis=dict(title='Periode Pekan (Weekly)', type='category', tickfont=dict(color='#800080')),
-            yaxis=dict(title='Kumulatif Jumlah WP / NOP', tickfont=dict(color='#800080')),
-            legend=dict(bgcolor='#FFF0F5', bordercolor='#9370DB', borderwidth=1),
+            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.8)',
+            title=dict(text="Kurva Kumulatif Mingguan Jumlah WP Segmentasi Piutang PBB", font=dict(size=16, color='#1E3A8A')),
+            xaxis=dict(title='Periode Pekan (Weekly)', type='category', tickfont=dict(color='#1E3A8A')),
+            yaxis=dict(title='Kumulatif Jumlah WP / NOP', tickfont=dict(color='#1E3A8A')),
+            legend=dict(bgcolor='#F8F9FA', bordercolor='#CBD5E1', borderwidth=1),
             hovermode="x unified",
             autosize=True
         )
