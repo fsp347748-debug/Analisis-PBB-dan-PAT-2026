@@ -206,7 +206,7 @@ fig.update_layout(
     title=dict(text="Dampak Kebijakan Insentif Fiskal terhadap Pendapatan Daerah", font=dict(size=18, color='#1E3A8A')),
     xaxis=dict(title='Jenis Pajak', tickfont=dict(color='#1E3A8A'), type='category'),
     yaxis=dict(title='Jumlah Total (Rp)', tickfont=dict(color='#1E3A8A')),
-    legend=dict(bgcolor='#F8F9FA', bordercolor='#CBD5E1', borderwidth=1),
+    legend=dict(bgcolor='#E2E8F0', bordercolor='#1E3A8A', borderwidth=1),
     hovermode="x unified",
     margin=dict(t=60, b=40)
 )
@@ -266,7 +266,7 @@ with tab1:
             title=dict(text="Kurva Akumulasi Mingguan (Air Tanah)", font=dict(size=16, color='#1E3A8A')),
             xaxis=dict(title='Periode Pekan (Weekly)', type='category', tickfont=dict(color='#1E3A8A')),
             yaxis=dict(title='Total Kumulatif (Rp)', tickfont=dict(color='#1E3A8A')),
-            legend=dict(bgcolor='#F8F9FA', bordercolor='#CBD5E1', borderwidth=1),
+            legend=dict(bgcolor='#E2E8F0', bordercolor='#1E3A8A', borderwidth=1),
             hovermode="x unified",
             autosize=True
         )
@@ -307,7 +307,7 @@ with tab1:
             title=dict(text="Kurva Kumulatif Jumlah Wajib Pajak Mingguan (Air Tanah)", font=dict(size=16, color='#1E3A8A')),
             xaxis=dict(title='Periode Pekan (Weekly)', type='category', tickfont=dict(color='#1E3A8A')),
             yaxis=dict(title='Kumulatif Jumlah WP', tickfont=dict(color='#1E3A8A')),
-            legend=dict(bgcolor='#F8F9FA', bordercolor='#CBD5E1', borderwidth=1),
+            legend=dict(bgcolor='#E2E8F0', bordercolor='#1E3A8A', borderwidth=1),
             hovermode="x unified",
             autosize=True
         )
@@ -364,7 +364,7 @@ with tab2:
             title=dict(text="Kurva Akumulasi Mingguan (PBB)", font=dict(size=16, color='#1E3A8A')),
             xaxis=dict(title='Periode Pekan (Weekly)', type='category', tickfont=dict(color='#1E3A8A')),
             yaxis=dict(title='Total Kumulatif (Rp)', tickfont=dict(color='#1E3A8A')),
-            legend=dict(bgcolor='#F8F9FA', bordercolor='#CBD5E1', borderwidth=1),
+            legend=dict(bgcolor='#E2E8F0', bordercolor='#1E3A8A', borderwidth=1),
             hovermode="x unified",
             autosize=True
         )
@@ -405,7 +405,7 @@ with tab2:
             title=dict(text="Kurva Kumulatif Jumlah NOP Mingguan (PBB)", font=dict(size=16, color='#1E3A8A')),
             xaxis=dict(title='Periode Pekan (Weekly)', type='category', tickfont=dict(color='#1E3A8A')),
             yaxis=dict(title='Kumulatif Jumlah NOP', tickfont=dict(color='#1E3A8A')),
-            legend=dict(bgcolor='#F8F9FA', bordercolor='#CBD5E1', borderwidth=1),
+            legend=dict(bgcolor='#E2E8F0', bordercolor='#1E3A8A', borderwidth=1),
             hovermode="x unified",
             autosize=True
         )
@@ -451,7 +451,7 @@ with tab2:
             title=dict(text="Kurva Akumulasi Mingguan (Piutang PBB)", font=dict(size=16, color='#1E3A8A')),
             xaxis=dict(title='Periode Pekan (Weekly)', type='category', tickfont=dict(color='#1E3A8A')),
             yaxis=dict(title='Total Kumulatif Piutang (Rp)', tickfont=dict(color='#1E3A8A')),
-            legend=dict(bgcolor='#F8F9FA', bordercolor='#CBD5E1', borderwidth=1),
+            legend=dict(bgcolor='#E2E8F0', bordercolor='#1E3A8A', borderwidth=1),
             hovermode="x unified",
             autosize=True
         )
@@ -483,8 +483,7 @@ with tab2:
             line=dict(color='#94A3B8', width=3, shape='linear')
         ))
         fig_seg_cum_piutang.add_trace(go.Scatter(
-            x=df_seg_piitang_weekly['Week_Label'] if 'df_seg_piutang_weekly' in locals() else df_seg_piutang_weekly['Week_Label'], 
-            y=df_seg_piutang_weekly['September_Cum'], 
+            x=df_seg_piutang_weekly['Week_Label'], y=df_seg_piutang_weekly['September_Cum'], 
             mode='lines+markers', name='Akumulasi WP Piutang September',
             hovertemplate="<b>%{x}</b><br>Akumulasi WP Piutang: %{y:,.0f} WP<extra></extra>",
             line=dict(color='#3B82F6', width=3, shape='linear')
@@ -494,7 +493,7 @@ with tab2:
             title=dict(text="Kurva Kumulatif Mingguan Jumlah WP Segmentasi Piutang PBB", font=dict(size=16, color='#1E3A8A')),
             xaxis=dict(title='Periode Pekan (Weekly)', type='category', tickfont=dict(color='#1E3A8A')),
             yaxis=dict(title='Kumulatif Jumlah WP / NOP', tickfont=dict(color='#1E3A8A')),
-            legend=dict(bgcolor='#F8F9FA', bordercolor='#CBD5E1', borderwidth=1),
+            legend=dict(bgcolor='#E2E8F0', bordercolor='#1E3A8A', borderwidth=1),
             hovermode="x unified",
             autosize=True
         )
